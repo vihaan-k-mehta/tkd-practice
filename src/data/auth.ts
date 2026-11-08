@@ -19,10 +19,10 @@ export function useAuth(): AuthState {
   return state;
 }
 
-export const sendCode = (email: string) =>
-  supabase.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { shouldCreateUser: true } });
-export const verifyCode = (email: string, code: string) =>
-  supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.replace(/\s/g, ''), type: 'email' });
+export const signIn = (email: string, password: string) =>
+  supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+export const signUp = (email: string, password: string) =>
+  supabase.auth.signUp({ email: email.trim().toLowerCase(), password });
 export const signOut = () => supabase.auth.signOut();
 
 export async function loadProfile(uid: string): Promise<string> {
