@@ -144,3 +144,16 @@ body[data-phase='rest'] .blobs { display: none; }
 .tap-rep { min-height: 88px; font-size: 24px; margin-top: 8px; }
 .hurt { margin-top: 18px; }
 .tap-rep { margin-top: 24px; }
+
+/* Calendar */
+.cal-head { display: flex; align-items: center; justify-content: space-between; }
+.cal-head h3 { font-size: 20px; }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 8px; }
+.cal-dow { text-align: center; color: var(--sub); font-size: 14px; padding: 4px 0; }
+.cal-day { min-height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; background: var(--surface); color: var(--ink); border: 1.5px solid var(--line); border-radius: 14px; font: inherit; font-size: 16px; cursor: pointer; padding: 2px 0; }
+.cal-day i { font-style: normal; font-size: 13px; line-height: 1; min-height: 13px; }
+.cal-day.out { opacity: 0.4; }
+.cal-day.st-done { background: var(--accent); color: var(--on-accent); border-color: var(--ink); }
+.cal-day.st-missed { border-style: dashed; border-color: var(--ink); }
+.cal-day.st-partial { border-color: var(--ink); }
+.cal-day.is-today { border: var(--bw, 2.5px) solid var(--ink); font-weight: 700; }

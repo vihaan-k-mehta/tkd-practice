@@ -5,6 +5,7 @@ import { SessionScreen } from '../screens/Session';
 import { Routines } from '../screens/Routines';
 import { RoutineBuilder } from '../screens/RoutineBuilder';
 import { Placeholder } from '../screens/Placeholder';
+import { SchedulePage } from '../screens/Schedule';
 import { Settings } from '../screens/Settings';
 
 export function App() {
@@ -17,7 +18,7 @@ export function App() {
       {name === 'session' && <SessionScreen key={id} id={id} />}
       {name === 'routines' && <Routines />}
       {name === 'routine' && <RoutineBuilder key={id} id={id} />}
-      {name === 'schedule' && <Placeholder title="Schedule" note="Nothing scheduled. The weekly plan comes in a later milestone." />}
+      {name === 'schedule' && <SchedulePage />}
       {name === 'quests' && <Placeholder title="Quests" note="No quests yet." />}
       {name === 'ranks' && <Placeholder title="Ranks" note="No group yet." />}
       {name === 'settings' && <Settings />}

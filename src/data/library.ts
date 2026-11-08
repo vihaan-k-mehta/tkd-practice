@@ -1,6 +1,7 @@
 import { createStore } from './store';
 import { TEMPLATES } from './templates';
 import type { Equipment, Routine } from './types';
+import { emptySchedule, type Schedule } from '../engine/schedule';
 
 export const userRoutines = createStore<Routine[]>('tkd.routines.v1', []);
 export const equipment = createStore<Record<Equipment, boolean>>('tkd.equipment.v1', { ankleWeights: true, bands: true, heavyBag: true, rope: true, box: true });
@@ -12,7 +13,13 @@ export interface SessionRecord {
 }
 export const history = createStore<SessionRecord[]>('tkd.history.v1', []);
 
-export const uid = () => Math.random().toString(36).slice(2, 10);
+/** Local YYYY-MM-DD, never UTC. */
+export function localDate(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+export const schedule = createStore<Schedule>('tkd.schedule.v1', emptySchedule(localDate()));
+
+export const uid =() => Math.random().toString(36).slice(2, 10);
 export const getRoutine = (id: string, mine: Routine[] = userRoutines.get()): Routine | undefined =>
   TEMPLATES.find((t) => t.id === id) ?? mine.find((r) => r.id === id);
 
@@ -20,8 +27,3 @@ export function saveRoutine(r: Routine) {
   userRoutines.set((list) => (list.some((x) => x.id === r.id) ? list.map((x) => (x.id === r.id ? r : x)) : [...list, r]));
 }
 export const deleteRoutine = (id: string) => userRoutines.set((l) => l.filter((r) => r.id !== id));
-
-/** Local YYYY-MM-DD, never UTC. */
-export function localDate(d = new Date()): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
