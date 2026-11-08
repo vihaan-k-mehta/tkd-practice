@@ -1,0 +1,26 @@
+{
+  "name": "tkd-practice",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host",
+    "test": "vitest run",
+    "shots": "playwright test"
+  },
+  "dependencies": {
+    "lucide-preact": "*",
+    "preact": "*"
+  },
+  "devDependencies": {
+    "@fontsource-variable/archivo": "*",
+    "@playwright/test": "*",
+    "@preact/preset-vite": "*",
+    "typescript": "*",
+    "vite": "*",
+    "vite-plugin-pwa": "*",
+    "vitest": "*"
+  }
+}

@@ -1,0 +1,23 @@
+import { CalendarDays, Dumbbell, House, Swords, Trophy } from 'lucide-preact';
+import type { Route } from './router';
+
+const tabs = [
+  { id: 'today', label: 'Today', Icon: House },
+  { id: 'routines', label: 'Routines', Icon: Dumbbell },
+  { id: 'schedule', label: 'Schedule', Icon: CalendarDays },
+  { id: 'quests', label: 'Quests', Icon: Swords },
+  { id: 'ranks', label: 'Ranks', Icon: Trophy },
+] as const;
+
+export function TabBar({ route }: { route: Route }) {
+  return (
+    <nav class="tabbar" aria-label="Main">
+      {tabs.map(({ id, label, Icon }) => (
+        <a class="tab" href={`#/${id}`} aria-current={route === id ? 'page' : undefined}>
+          <Icon size={24} strokeWidth={1.75} aria-hidden="true" />
+          {label}
+        </a>
+      ))}
+    </nav>
+  );
+}
