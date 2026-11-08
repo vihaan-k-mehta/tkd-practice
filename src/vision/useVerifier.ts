@@ -102,10 +102,14 @@ export function useVerifier() {
 
   // The camera must never stay on in the background.
   useEffect(() => {
-    const hide = () => { if (document.visibilityState === 'hidden') stop(); };
-    document.addEventListener('visibilitychange', hide);
-    return () => { document.removeEventListener('visibilitychange', hide); stop(); };
-  }, [stop]);
+    let resume = false;
+    const onVis = () => {
+      if (document.visibilityState === 'hidden') { resume = running.current; stop(); }
+      else if (resume) { resume = false; void start(); } // came back: turn the camera on again by itself
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => { document.removeEventListener('visibilitychange', onVis); stop(); };
+  }, [stop, start]);
 
   return { status, error, frame, gate, delegate, video, lmRef, frameRef, tracker, start, stop, attach, beginBlock, endBlock, readGate };
 }

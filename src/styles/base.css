@@ -203,3 +203,12 @@ body[data-phase='rest'] .blobs { display: none; }
 .frame-guide { position: relative; max-width: 280px; margin: 0 auto; }
 .frame-guide .outline { z-index: 3; position: absolute; inset: 8% 20% 14% 20%; width: 60%; height: 78%; pointer-events: none; fill: none; stroke: #fff; stroke-width: 2.5; opacity: 0.9; stroke-dasharray: 4 4; stroke-linecap: round; }
 .banner.gate { text-align: center; font-weight: 700; }
+
+/* Calibration */
+.cal-box { margin-top: 14px; padding: 14px; border-radius: 18px; background: var(--surface); border: var(--bw) solid var(--ink); text-align: center; }
+@media (prefers-color-scheme: dark) { .cal-box { border: 1px solid var(--line); } }
+.cal-box.ok { background: var(--accent); color: var(--on-accent); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.cal-box.ok .sub { color: inherit; flex-basis: 100%; }
+.cal-dots { display: flex; justify-content: center; gap: 14px; margin: 12px 0 6px; }
+.cal-dots span { width: 44px; height: 44px; border-radius: 50%; border: 2.5px solid var(--ink); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
+.cal-dots span.on { background: var(--accent); color: var(--on-accent); }

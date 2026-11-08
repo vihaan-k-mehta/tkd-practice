@@ -165,4 +165,21 @@ describe('gate: pauses and resumes the timer', () => {
     for (let i = 0; i < 4; i++) { step(g, t, t + 2000, { person: true, moving: false }); t += 2100; step(g, t, t + 17000, { person: false, moving: false }, 500); t += 17500; }
     expect(g.state.state).toBe('failed');
   });
+
+  it('time when the camera was off earns no verified credit and counts as paused', () => {
+    const g = new Gate('presence');
+    step(g, 0, 2000, { person: true, moving: false });
+    const verified = g.state.verifiedMs;
+    // no frames at all for 30 seconds (camera stopped), then the person is seen again
+    const r = g.update(32000, { person: true, moving: false });
+    expect(r.verifiedMs).toBe(verified);
+    expect(r.pausedMs).toBeGreaterThanOrEqual(29000);
+    expect(r.running).toBe(false);
+    expect(step(g, 32100, 32800, { person: true, moving: false }).running).toBe(true);
+  });
+  it('a long enough gap with no camera fails the block', () => {
+    const g = new Gate('presence');
+    step(g, 0, 1000, { person: true, moving: false });
+    expect(g.update(90000, { person: true, moving: false }).state).toBe('failed');
+  });
 });

@@ -25,9 +25,11 @@ export interface RunProps {
   verifier?: Verifier;
   verifyMode?: 'presence' | 'motion';
   onFail?: (elapsedSec: number, verifiedSec: number) => void;
+  /** The camera stopped (for example the app went to the background). The timer holds until it is back. */
+  cameraDown?: boolean;
 }
 
-export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, timeline, phaseChange, next, skipLabel, onDone, onSkip, verifier, verifyMode, onFail }: RunProps) {
+export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, timeline, phaseChange, next, skipLabel, onDone, onSkip, verifier, verifyMode, onFail, cameraDown }: RunProps) {
   const clock = useRef(new BlockClock(segments.reduce((a, b) => a + b, 0))).current;
   const [segs, setSegs] = useState(segments);
   const [paused, setPaused] = useState(false);
@@ -66,7 +68,7 @@ export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, time
 
   // Camera gate: pause the clock while you are out of view or idle, resume when detected again.
   const gate = verifier?.gate ?? null;
-  const held = !!gate && !gate.running;
+  const held = (!!gate && !gate.running) || !!cameraDown;
   useEffect(() => {
     if (!verifier || !verifyMode) return;
     verifier.beginBlock(verifyMode);
@@ -76,7 +78,7 @@ export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, time
     if (!gate) return;
     if (held) clock.pause(); else if (!paused) clock.resume();
     if (gate.state === 'failed' && !failed.current) { failed.current = true; failRef.current?.(clock.elapsedSec(), gate.verifiedMs / 1000); }
-  }, [held, gate?.state]);
+  }, [held, gate?.state, cameraDown]);
 
   useEffect(() => {
     const last = view.remaining <= 10 && view.index === segs.length - 1 && kind === 'work';
@@ -94,7 +96,8 @@ export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, time
       <p class="clock" role="timer" aria-label={`${view.remaining} seconds remaining`}>{kind === 'ready' ? view.remaining : fmt(view.remaining)}</p>
       {kind !== 'ready' && next && <p class="sub up-next">Next: {next}</p>}
 
-      {held && gate && gate.message && <p class="banner gate" role="alert">{gate.message}</p>}
+      {cameraDown && verifier && <button class="banner gate" onClick={() => void verifier.start()}>The camera turned off, so your time is paused. Tap to turn it back on.</button>}
+      {held && !cameraDown && gate && gate.message && <p class="banner gate" role="alert">{gate.message}</p>}
       {view.suspended && <button class="banner" onClick={() => audio.unlock()}>Tap to enable sound</button>}
 
       <section class="panel run-controls">

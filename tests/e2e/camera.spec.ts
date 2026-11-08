@@ -21,7 +21,19 @@ test('camera setup loads the model under the CSP, shows searching, keeps Start d
 
   await expect(page.getByText(/Camera on, searching/)).toBeVisible({ timeout: 60000 });
   await expect(page.getByText(/Step back so your whole body is in view/).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Start', exact: true })).toBeDisabled();
+  // Start can be pressed from across the room: it arms and waits to see you.
+  await expect(page.getByRole('button', { name: 'Start when I am in frame' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Start when I am in frame' }).click();
+  await expect(page.getByText('Get into position. It starts by itself when it sees you.')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Waiting for you to get in frame/ })).toBeVisible();
+  await page.getByRole('button', { name: /Waiting for you to get in frame/ }).click();
+  await expect(page.getByRole('button', { name: 'Start when I am in frame' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Optional: calibrate with 3 kicks' })).toBeVisible();
+  await page.getByRole('button', { name: 'Optional: calibrate with 3 kicks' }).click();
+  await expect(page.getByText('Throw 3 kicks at your usual height')).toBeVisible();
+  await expect(page.getByLabel('0 of 3 kicks seen')).toBeVisible();
+  await page.screenshot({ path: 'screenshots/m7-calibrating.png', fullPage: true });
+  await page.getByRole('button', { name: 'Cancel calibration' }).click();
   await page.screenshot({ path: 'screenshots/m7-setup.png', fullPage: true });
 
   // The camera light goes off when we leave the checked flow.

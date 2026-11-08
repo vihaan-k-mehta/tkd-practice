@@ -1,7 +1,7 @@
 export type GateState = 'verified' | 'searching' | 'idle' | 'resuming' | 'failed';
 export interface GateView { state: GateState; running: boolean; verifiedMs: number; pausedMs: number; message: string }
 
-const SEARCH_AFTER = 1000, IDLE_AFTER = 5000, RESUME_AFTER = 500, FAIL_AFTER = 60000;
+const GAP_AFTER = 1500, SEARCH_AFTER = 1000, IDLE_AFTER = 5000, RESUME_AFTER = 500, FAIL_AFTER = 60000;
 
 /**
  * Decides whether a verified block's timer may run.
@@ -16,8 +16,14 @@ export class Gate {
   constructor(private mode: 'presence' | 'motion') {}
 
   update(tMs: number, input: { person: boolean; moving: boolean }): GateView {
-    const dt = this.last === undefined ? 0 : Math.max(0, tMs - this.last);
+    let dt = this.last === undefined ? 0 : Math.max(0, tMs - this.last);
     this.last = tMs;
+    // Frames normally arrive every ~50 ms. A big gap means the camera was not watching, so none of it counts as verified.
+    if (dt > GAP_AFTER && this.state.state !== 'failed') {
+      this.state = { ...this.state, state: 'searching', running: false, pausedMs: this.state.pausedMs + dt, message: 'Step back so your whole body is in view.' };
+      this.okSince = undefined; this.personAt = undefined; dt = 0;
+      if (this.state.pausedMs > FAIL_AFTER) this.state = { ...this.state, state: 'failed', message: 'The camera could not see you for too long. This block was not completed.' };
+    }
     if (this.personAt === undefined) { this.personAt = tMs; this.movedAt = tMs; }
     if (input.person) this.personAt = tMs;
     if (input.person && input.moving) this.movedAt = tMs;

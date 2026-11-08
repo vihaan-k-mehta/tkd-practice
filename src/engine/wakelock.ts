@@ -19,3 +19,6 @@ export function keepAwake(): () => void {
     void sentinel?.release().catch(() => {});
   };
 }
+
+/** Whether this browser can keep the screen on by itself. */
+export const wakeLockSupported = (): boolean => typeof navigator !== 'undefined' && 'wakeLock' in navigator;

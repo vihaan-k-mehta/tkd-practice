@@ -46,6 +46,7 @@ export function SessionScreen({ id }: { id?: string }) {
   const camSet = camera.use();
   const [honorNow, setHonorNow] = useState(false);
   const usedCam = useRef(false);
+  const weakCam = useRef(false);
   const [step, setStep] = useState<Step>({ s: 'check' });
   const [tested, setTested] = useState(false);
   const [sheet, setSheet] = useState(false);
@@ -80,7 +81,7 @@ export function SessionScreen({ id }: { id?: string }) {
     saved.current = true;
     const rec: SessionRecord = {
       id: uid(), date: localDate(), routineId: routine.baseId ?? routine.id, routineName: routine.name,
-      unverified: hasVerify && !usedCam.current ? true : undefined,
+      unverified: hasVerify && (!usedCam.current || weakCam.current) ? true : undefined,
       totalSec: Math.round(results.reduce((a, r) => a + (r?.actualSec ?? 0), 0)),
       blocks: routine.blocks.map((b, i) => {
         const ex = exerciseById(b.exerciseId)!; const r = results[i] ?? blank();
@@ -115,18 +116,19 @@ export function SessionScreen({ id }: { id?: string }) {
     const st = plan[bi][si];
     const ex = exOf(bi);
     const finishStep = (sec: number, reps?: number, side?: string, verifiedSec?: number) => {
-      if (verifiedSec !== undefined) usedCam.current = true;
+      if (verifiedSec !== undefined) { if (verifiedSec >= 0.5 * sec) usedCam.current = true; else weakCam.current = true; }
       bump(bi, (r) => ({ ...r, actualSec: r.actualSec + sec, verifiedSec: verifiedSec === undefined ? r.verifiedSec : (r.verifiedSec ?? 0) + verifiedSec, left: r.left + (side?.startsWith('Left') ? reps ?? 0 : 0), right: r.right + (side?.startsWith('Right') ? reps ?? 0 : 0), any: r.any + (reps && !side ? reps : 0) }));
       if (si + 1 < plan[bi].length) setStep({ s: 'run', bi, si: si + 1 });
       else { bump(bi, (r) => ({ ...r, completed: true })); nextBlock(bi); }
     };
     const skipBlock = () => nextBlock(bi);
     // The camera could not see you for too long, so this block does not count.
-    const failBlock = (sec: number, verified = 0) => { usedCam.current = true; bump(bi, (r) => ({ ...r, actualSec: r.actualSec + sec, verifiedSec: (r.verifiedSec ?? 0) + verified, camFailed: true })); nextBlock(bi); };
-    const watched = camActive && ex.verify !== 'none';
+    const failBlock = (sec: number, verified = 0) => { bump(bi, (r) => ({ ...r, actualSec: r.actualSec + sec, verifiedSec: (r.verifiedSec ?? 0) + verified, camFailed: true })); nextBlock(bi); };
+    const watched = wantCam && ex.verify !== 'none';
+    const cameraDown = watched && ver.status !== 'ready';
     if (st.type === 'reps') {
       return <RepsRun key={`${bi}-${si}`} label={ex.name} reps={st.reps} side={st.side} caption={st.caption} next={nextLabel(bi, si)}
-        verifier={watched ? ver : undefined} counts={ex.verify === 'reps' ? 'camera' : 'tap'} mode={ex.verify === 'motion' ? 'motion' : 'presence'} onFail={(sec) => failBlock(sec)}
+        verifier={watched ? ver : undefined} cameraDown={cameraDown} counts={ex.verify === 'reps' ? 'camera' : 'tap'} mode={ex.verify === 'motion' ? 'motion' : 'presence'} onFail={(sec) => failBlock(sec)}
         onDone={(c, sec, verified) => finishStep(sec, c, st.side, verified ? sec : undefined)} onSkip={skipBlock} />;
     }
     const prev = plan[bi][si - 1];
@@ -134,7 +136,7 @@ export function SessionScreen({ id }: { id?: string }) {
       <BlockRun key={`${bi}-${si}`} kind={st.phase} label={ex.name} segments={st.segments} sideLabels={st.sideLabels} caption={st.caption} cfg={cfg}
         phaseChange={st.phase === 'work' && prev?.type === 'timed' && prev.phase === 'rest'} next={nextLabel(bi, si)}
         skipLabel={st.phase === 'rest' ? 'Skip rest' : 'Skip block'}
-        verifier={watched && st.phase === 'work' ? ver : undefined} verifyMode={ex.verify === 'motion' ? 'motion' : 'presence'} onFail={failBlock}
+        verifier={watched && st.phase === 'work' ? ver : undefined} cameraDown={cameraDown && st.phase === 'work'} verifyMode={ex.verify === 'motion' ? 'motion' : 'presence'} onFail={failBlock}
         onDone={(sec, vsec) => finishStep(sec, undefined, undefined, vsec)} onSkip={st.phase === 'rest' ? () => finishStep(0) : skipBlock} />
     );
   };

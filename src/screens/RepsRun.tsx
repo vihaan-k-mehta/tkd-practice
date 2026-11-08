@@ -3,12 +3,12 @@ import { Minus, Plus, SkipForward } from 'lucide-preact';
 import type { Verifier } from '../vision/useVerifier';
 
 /** Manual rep counter. Camera counting replaces the tap in the camera milestone. */
-export function RepsRun({ label, reps, side, caption, next, onDone, onSkip, verifier, onFail, counts = 'camera', mode = 'presence' }: {
+export function RepsRun({ label, reps, side, caption, next, onDone, onSkip, verifier, onFail, counts = 'camera', mode = 'presence', cameraDown }: {
   label: string; reps: number; side?: string; caption?: string; next?: string; onDone: (count: number, elapsedSec: number, verified?: boolean) => void; onSkip: () => void;
   /** When set, the camera counts the kicks instead of your taps. */
   verifier?: Verifier; onFail?: (elapsedSec: number) => void;
   /** 'camera': the camera counts kicks. 'tap': you count, but taps only count while the camera sees you (and sees you move, when asked). */
-  counts?: 'camera' | 'tap'; mode?: 'presence' | 'motion';
+  counts?: 'camera' | 'tap'; mode?: 'presence' | 'motion'; cameraDown?: boolean;
 }) {
   const [manual, setN] = useState(0);
   const t0 = useRef(performance.now()).current;
@@ -40,8 +40,9 @@ export function RepsRun({ label, reps, side, caption, next, onDone, onSkip, veri
         <p class="sub note" role="status">The camera is counting your kicks. {gate && !gate.running && gate.message ? gate.message : 'Throw them to the side so the camera can see the leg.'}</p>
       ) : (
         <>
-          <button class="btn-primary tap-rep" onClick={() => { if (gate && !gate.running) { setRefused(true); return; } setRefused(false); setN(manual + 1); }}><Plus size={28} aria-hidden="true" /> Count a rep</button>
-          {verifier && <p class="sub note" role="status">{gate && !gate.running ? gate.message || 'The camera is checking you.' : mode === 'motion' ? 'The camera is watching that you keep moving.' : 'The camera is checking you are in view.'}{refused ? ' That rep was not counted.' : ''}</p>}
+          <button class="btn-primary tap-rep" onClick={() => { if (cameraDown || (gate && !gate.running)) { setRefused(true); return; } setRefused(false); setN(manual + 1); }}><Plus size={28} aria-hidden="true" /> Count a rep</button>
+          {verifier && cameraDown && <button class="banner gate" onClick={() => void verifier.start()}>The camera turned off. Tap to turn it back on.</button>}
+          {verifier && !cameraDown && <p class="sub note" role="status">{gate && !gate.running ? gate.message || 'The camera is checking you.' : mode === 'motion' ? 'The camera is watching that you keep moving.' : 'The camera is checking you are in view.'}{refused ? ' That rep was not counted.' : ''}</p>}
         </>
       )}
       <div class="two" style={{ marginTop: '14px' }}>
