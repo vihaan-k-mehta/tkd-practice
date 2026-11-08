@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 
-export type Route = 'today' | 'routines' | 'schedule' | 'quests' | 'ranks' | 'settings' | 'session' | 'routine' | 'animations';
-const routes: Route[] = ['today', 'routines', 'schedule', 'quests', 'ranks', 'settings', 'session', 'routine', 'animations'];
+export type Route = 'today' | 'routines' | 'schedule' | 'quests' | 'ranks' | 'settings' | 'session' | 'routine' | 'animations' | 'debug-pose';
+const routes: Route[] = ['today', 'routines', 'schedule', 'quests', 'ranks', 'settings', 'session', 'routine', 'animations', 'debug-pose'];
 export interface Loc { name: Route; id?: string }
 
 function read(): Loc {

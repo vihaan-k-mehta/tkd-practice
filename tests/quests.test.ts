@@ -185,6 +185,17 @@ describe('awardSession', () => {
   });
 });
 
+describe('honor mode', () => {
+  it('an unverified session earns half XP and a verified one earns full', () => {
+    const r = rec('2026-11-02');
+    const full = sum(awardSession(prog(), r, ctx('2026-11-02', [r])));
+    const u = { ...r, unverified: true };
+    const half = sum(awardSession(prog(), u, ctx('2026-11-02', [u])));
+    expect(half).toBe(Math.floor(20 / 2) + Math.floor(10 / 2) + Math.floor(20 / 2));
+    expect(half).toBeLessThan(full);
+  });
+});
+
 describe('quitting', () => {
   it('strict forfeits the day quest, light only leaves unfinished blocks uncounted', () => {
     expect(quitEvents(prog({ mode: 'strict' }), '2026-11-02', ctx('2026-11-02')).map((e) => e.type)).toContain('forfeit');

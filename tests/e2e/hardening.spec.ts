@@ -4,7 +4,7 @@ test('no CSP violations or page errors across the main screens, and a malformed 
   const problems: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error' || /content security policy/i.test(m.text())) problems.push(m.text()); });
   page.on('pageerror', (e) => problems.push(String(e)));
-  for (const r of ['today', 'routines', 'schedule', 'settings', 'session/daily-stretch', 'animations', 'quests', 'session/%E0%A4%A']) {
+  for (const r of ['today', 'routines', 'schedule', 'settings', 'session/daily-stretch', 'animations', 'quests', 'debug-pose', 'session/%E0%A4%A']) {
     await page.goto(`./#/${r}`);
     await page.waitForTimeout(300);
   }

@@ -2,6 +2,7 @@ import { useEffect } from 'preact/hooks';
 import { useLoc } from './router';
 import { history, localDate, notice, progress, schedule } from '../data/library';
 import { catchUp } from '../engine/quests';
+import { DebugPose } from '../screens/DebugPose';
 import { Quests } from '../screens/Quests';
 import { TabBar } from './TabBar';
 import { Today } from '../screens/Today';
@@ -43,6 +44,7 @@ export function App() {
       {name === 'ranks' && <Placeholder title="Ranks" note="No group yet." />}
       {name === 'settings' && <Settings />}
       {name === 'animations' && <AnimSheet />}
+      {name === 'debug-pose' && <DebugPose />}
       {name !== 'session' && <TabBar route={tab} />}
     </>
   );

@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 test('build a routine, save it, run it start to finish, see the summary', async ({ browser }) => {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: 'light' });
   const page = await ctx.newPage();
+  await page.addInitScript(() => { localStorage.setItem('tkd.camera.v1', JSON.stringify({ use: false })); });
   await page.goto('./#/routines');
   await page.screenshot({ path: 'screenshots/m4-routines.png' });
 

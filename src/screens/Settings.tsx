@@ -4,7 +4,7 @@ import { Header } from './Today';
 import { setAlerts, useAlerts } from '../data/settings';
 import { PRESETS, parseSeconds, type BeepType, type VibrateMode } from '../engine/alerts';
 import { audio, vibrate, vibrationSupported } from '../engine/audio';
-import { equipment } from '../data/library';
+import { camera, equipment } from '../data/library';
 import { Account } from './Account';
 import { EQUIPMENT_LABEL, type Equipment } from '../data/types';
 
@@ -25,6 +25,7 @@ function Toggle({ label, on, set, hint }: { label: string; on: boolean; set: (v:
 export function Settings() {
   const a = useAlerts();
   const own = equipment.use();
+  const cam = camera.use();
   const [times, setTimes] = useState(a.atSecondsRemaining.join(', '));
   const preview = async (t: BeepType) => { await audio.unlock(); audio.setVolume(a.volume); audio.play(t); };
   const commitTimes = (v: string) => { setTimes(v); setAlerts({ atSecondsRemaining: parseSeconds(v) }); };
@@ -38,6 +39,15 @@ export function Settings() {
 
       <p class="eyebrow">Account</p>
       <Account />
+
+      <p class="eyebrow">Camera check</p>
+      <ul class="rowlist">
+        <Toggle label="Use the camera on checked blocks" on={cam.use} set={(v) => camera.set((c) => ({ ...c, use: v }))} hint="Stretches check you are in view, bag work checks you are moving, kicks are counted." />
+        <Toggle label="Honor mode" on={cam.honor} set={(v) => camera.set((c) => ({ ...c, honor: v }))} hint="Skip the camera for bad light or a broken camera. Sessions are marked unverified, earn half XP and stay off leaderboards." />
+        <Toggle label="Show skeleton overlay" on={cam.skeleton} set={(v) => camera.set((c) => ({ ...c, skeleton: v }))} hint="For debugging only." />
+      </ul>
+      <p class="sub note">Video stays on this phone. Nothing is recorded or sent. A single camera can confirm you are in view, moving and throwing real kicks. It cannot judge fine technique, so it is not a coach.</p>
+      {cam.kickHeight !== undefined && <button class="btn-ghost" onClick={() => camera.set((c) => ({ ...c, kickHeight: undefined }))}>Reset kick height calibration</button>}
 
       <p class="eyebrow">Equipment I own</p>
       <ul class="rowlist">

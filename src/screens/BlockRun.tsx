@@ -3,6 +3,7 @@ import { Pause, Play, Plus, SkipForward } from 'lucide-preact';
 import { BlockClock } from '../engine/timer';
 import { dueBeeps, segmentAt, segmentTimeline, type AlertConfig, type Beep } from '../engine/alerts';
 import { audio, vibrate } from '../engine/audio';
+import type { Verifier } from '../vision/useVerifier';
 
 const LOOKAHEAD = 0.15; // seconds scheduled ahead on the audio clock
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -18,11 +19,15 @@ export interface RunProps {
   phaseChange?: boolean;
   next?: string;
   skipLabel?: string;
-  onDone: (elapsedSec: number) => void;
+  onDone: (elapsedSec: number, verifiedSec?: number) => void;
   onSkip: () => void;
+  /** When set, the timer only runs while the camera sees you doing the work. */
+  verifier?: Verifier;
+  verifyMode?: 'presence' | 'motion';
+  onFail?: (elapsedSec: number, verifiedSec: number) => void;
 }
 
-export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, timeline, phaseChange, next, skipLabel, onDone, onSkip }: RunProps) {
+export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, timeline, phaseChange, next, skipLabel, onDone, onSkip, verifier, verifyMode, onFail }: RunProps) {
   const clock = useRef(new BlockClock(segments.reduce((a, b) => a + b, 0))).current;
   const [segs, setSegs] = useState(segments);
   const [paused, setPaused] = useState(false);
@@ -33,6 +38,9 @@ export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, time
   const cfgRef = useRef(cfg); cfgRef.current = cfg;
   const segsRef = useRef(segs); segsRef.current = segs;
   const doneRef = useRef(onDone); doneRef.current = onDone;
+  const verifierRef = useRef(verifier); verifierRef.current = verifier;
+  const failRef = useRef(onFail); failRef.current = onFail;
+  const failed = useRef(false);
 
   useEffect(() => {
     audio.setVolume(cfgRef.current.volume);
@@ -51,17 +59,31 @@ export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, time
       }
       const s = segmentAt(segsRef.current, el);
       setView({ index: s.index, remaining: Math.ceil(s.remaining - 1e-6), suspended: audio.state === 'suspended' });
-      if (!finished && clock.isDone()) { finished = true; clearInterval(id); doneRef.current(el); }
+      if (!finished && clock.isDone()) { finished = true; clearInterval(id); doneRef.current(el, verifierRef.current ? (verifierRef.current.readGate()?.verifiedMs ?? 0) / 1000 : undefined); }
     }, 40);
     return () => clearInterval(id);
   }, []);
+
+  // Camera gate: pause the clock while you are out of view or idle, resume when detected again.
+  const gate = verifier?.gate ?? null;
+  const held = !!gate && !gate.running;
+  useEffect(() => {
+    if (!verifier || !verifyMode) return;
+    verifier.beginBlock(verifyMode);
+    return () => { verifier.endBlock(); };
+  }, []);
+  useEffect(() => {
+    if (!gate) return;
+    if (held) clock.pause(); else if (!paused) clock.resume();
+    if (gate.state === 'failed' && !failed.current) { failed.current = true; failRef.current?.(clock.elapsedSec(), gate.verifiedMs / 1000); }
+  }, [held, gate?.state]);
 
   useEffect(() => {
     const last = view.remaining <= 10 && view.index === segs.length - 1 && kind === 'work';
     document.body.dataset.phase = kind === 'ready' ? 'ready' : kind === 'rest' ? 'rest' : last ? 'last' : 'work';
   }, [view.remaining, view.index, kind, segs.length]);
 
-  const toggle = () => { if (paused) clock.resume(); else clock.pause(); setPaused(!paused); };
+  const toggle = () => { if (paused) { if (!held) clock.resume(); } else clock.pause(); setPaused(!paused); };
   const add10 = () => { clock.addSeconds(10); setSegs((s) => s.map((d, i) => (i === s.length - 1 ? d + 10 : d))); };
   const eyebrow = kind === 'ready' ? 'Get ready' : sideLabels?.[view.index] ?? (kind === 'rest' ? 'Rest' : 'Work');
 
@@ -72,6 +94,7 @@ export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, time
       <p class="clock" role="timer" aria-label={`${view.remaining} seconds remaining`}>{kind === 'ready' ? view.remaining : fmt(view.remaining)}</p>
       {kind !== 'ready' && next && <p class="sub up-next">Next: {next}</p>}
 
+      {held && gate && gate.message && <p class="banner gate" role="alert">{gate.message}</p>}
       {view.suspended && <button class="banner" onClick={() => audio.unlock()}>Tap to enable sound</button>}
 
       <section class="panel run-controls">

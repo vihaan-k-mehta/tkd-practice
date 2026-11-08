@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 test('session: check sound, ready countdown beeps on the audio clock, hold runs, settings persist', async ({ browser }) => {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: 'light' });
   const page = await ctx.newPage();
+  await page.addInitScript(() => { localStorage.setItem('tkd.camera.v1', JSON.stringify({ use: false })); });
   await page.addInitScript(() => {
     (window as any).__beeps = [];
     const orig = OscillatorNode.prototype.start;

@@ -190,3 +190,16 @@ body[data-phase='rest'] .blobs { display: none; }
 .check { width: 30px; height: 30px; border-radius: 9px; border: 2.5px solid var(--ink); background: var(--surface); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; flex: none; padding: 0; cursor: pointer; }
 .check.on { background: var(--accent); color: var(--on-accent); }
 .banner ul { margin: 6px 0 4px 18px; padding: 0; text-align: left; }
+
+/* Camera */
+.pip { position: fixed; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); width: 112px; aspect-ratio: 3 / 4; border-radius: 14px; overflow: hidden; background: #000; border: var(--bw) solid var(--ink); z-index: 20; }
+.pip.off { display: none; }
+.pip.big { position: relative; right: auto; bottom: auto; width: 100%; max-width: 280px; margin: 0 auto; aspect-ratio: 3 / 4; z-index: 1; }
+.pip video, .pip canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.pip-status { position: absolute; left: 4px; right: 4px; bottom: 4px; display: flex; align-items: center; gap: 5px; font-size: 11px; line-height: 1.2; color: #fff; background: rgba(0,0,0,0.65); border-radius: 8px; padding: 3px 6px; }
+.pip.big .pip-status { font-size: 14px; }
+.pip-status i { width: 10px; height: 10px; border-radius: 50%; flex: none; background: #F5A623; }
+.pip-status.ok i { background: #3CCB6A; }
+.frame-guide { position: relative; max-width: 280px; margin: 0 auto; }
+.frame-guide .outline { z-index: 3; position: absolute; inset: 8% 20% 14% 20%; width: 60%; height: 78%; pointer-events: none; fill: none; stroke: #fff; stroke-width: 2.5; opacity: 0.9; stroke-dasharray: 4 4; stroke-linecap: round; }
+.banner.gate { text-align: center; font-weight: 700; }

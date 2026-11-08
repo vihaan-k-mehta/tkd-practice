@@ -136,7 +136,8 @@ export function awardSession(s: Progress, r: SessionRecord, c: Ctx): Event[] {
     out.push({ type: 'xp', delta: XP.extra, reason: 'Extra practice', date: r.date, key: `extra:${r.date}:${r.id}` });
   }
   if (s.makeUp > 0 && total > 0 && completed === total) out.push({ type: 'makeupDone', date: r.date });
-  return out;
+  // Without the camera on a checked block, rewards are halved (honor mode).
+  return r.unverified ? out.map((e) => (e.type === 'xp' && e.delta > 0 ? { ...e, delta: Math.floor(e.delta / 2) } : e)) : out;
 }
 
 /** Strict mode forfeits the day's quest when a session is quit early. Light only leaves the unfinished blocks uncounted. */

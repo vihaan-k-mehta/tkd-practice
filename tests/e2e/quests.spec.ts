@@ -33,7 +33,7 @@ test('missed days are judged once on open, strict mode costs XP and adds a make-
   await ctx.close();
 });
 
-test('finishing the scheduled session pays XP and completes the daily quest', async ({ browser }) => {
+test('finishing the scheduled session pays XP (half, because the camera was off) and completes the daily quest', async ({ browser }) => {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: 'light' });
   const page = await ctx.newPage();
   await page.addInitScript(([routine, sched, pr]) => {
@@ -42,6 +42,7 @@ test('finishing the scheduled session pays XP and completes the daily quest', as
     localStorage.setItem('tkd.routines.v1', JSON.stringify([routine]));
     localStorage.setItem('tkd.schedule.v1', JSON.stringify(sched));
     localStorage.setItem('tkd.progress.v1', JSON.stringify(pr));
+    localStorage.setItem('tkd.camera.v1', JSON.stringify({ use: false }));
   }, [quickRoutine, { since: ago(0), weekly: everyDay(), extras: [], moves: [], restPass: false }, prog({ xp: 0, bestXp: 0 })] as const);
   await page.goto('./#/session/quick1');
   await page.getByRole('button', { name: 'Play test beep' }).click();
@@ -52,7 +53,7 @@ test('finishing the scheduled session pays XP and completes the daily quest', as
   await page.goto('./#/quests');
   await expect(page.getByText('Daily quest').first()).toBeVisible();
   await expect(page.locator('li', { hasText: 'Daily quest' }).getByText('Done')).toBeVisible();
-  await expect(page.getByText(/^34 XP/)).toBeVisible();
+  await expect(page.getByText(/^17 XP/)).toBeVisible();
   await ctx.close();
 });
 

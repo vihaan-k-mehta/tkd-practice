@@ -27,7 +27,12 @@ export default defineConfig({
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-      workbox: { globPatterns: ['**/*.{js,css,html,svg,png,woff2}'] },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        globIgnores: ['models/**'],
+        // The pose model and WebAssembly are big, so they are cached the first time they are used.
+        runtimeCaching: [{ urlPattern: ({ url }) => url.pathname.includes('/models/'), handler: 'CacheFirst', options: { cacheName: 'pose-models', expiration: { maxEntries: 8 } } }],
+      },
     }),
   ],
   test: { include: ['tests/**/*.test.ts'] },

@@ -5,11 +5,14 @@ import { RepsRun } from './RepsRun';
 import { Sheet } from '../app/Sheet';
 import { ExerciseAnim } from '../anim/ExerciseAnim';
 import { TimeSheet } from '../app/TimeSheet';
+import { CameraPreview } from './CameraPreview';
+import { CameraSetup } from './CameraSetup';
+import { useVerifier } from '../vision/useVerifier';
 import { useAlerts } from '../data/settings';
 import { audio } from '../engine/audio';
 import { keepAwake } from '../engine/wakelock';
 import { exerciseById } from '../data/exercises';
-import { equipment, getRoutine, history, lastRoutine, localDate, progress, schedule, uid, userRoutines, type SessionRecord } from '../data/library';
+import { camera, equipment, getRoutine, history, lastRoutine, localDate, progress, schedule, uid, userRoutines, type SessionRecord } from '../data/library';
 import { applyEvents, awardSession, quitEvents } from '../engine/quests';
 import { blockFor } from '../data/templates';
 import { expandBlock, routineMinutes, stepSeconds, warmupReminderIndexes, READY_SEC } from '../engine/plan';
@@ -21,8 +24,8 @@ const READY_TIMELINE: Beep[] = [
 ];
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 
-type Step = { s: 'check' } | { s: 'ready'; bi: number } | { s: 'run'; bi: number; si: number } | { s: 'done' };
-interface Result { actualSec: number; completed: boolean; left: number; right: number; any: number; hurt?: boolean }
+type Step = { s: 'check' } | { s: 'camera' } | { s: 'ready'; bi: number } | { s: 'run'; bi: number; si: number } | { s: 'done' };
+interface Result { actualSec: number; completed: boolean; left: number; right: number; any: number; hurt?: boolean; verifiedSec?: number; camFailed?: boolean }
 const blank = (): Result => ({ actualSec: 0, completed: false, left: 0, right: 0, any: 0 });
 
 export function SessionScreen({ id }: { id?: string }) {
@@ -39,6 +42,10 @@ export function SessionScreen({ id }: { id?: string }) {
     return { ...base, blocks: [...base.blocks, extra] };
   }, [base, makeUp]);
   const [xpGain, setXpGain] = useState(0);
+  const ver = useVerifier();
+  const camSet = camera.use();
+  const [honorNow, setHonorNow] = useState(false);
+  const usedCam = useRef(false);
   const [step, setStep] = useState<Step>({ s: 'check' });
   const [tested, setTested] = useState(false);
   const [sheet, setSheet] = useState(false);
@@ -61,6 +68,10 @@ export function SessionScreen({ id }: { id?: string }) {
   useEffect(() => () => { delete document.body.dataset.phase; }, []);
 
   const n = routine?.blocks.length ?? 0;
+  const hasVerify = !!routine && routine.blocks.some((b) => exerciseById(b.exerciseId)!.verify !== 'none');
+  const wantCam = hasVerify && camSet.use && !camSet.honor && !honorNow;
+  const camActive = wantCam && ver.status === 'ready';
+  useEffect(() => { if (step.s === 'done') ver.stop(); }, [step.s]);
   const bump = (bi: number, fn: (r: Result) => Result) => setResults((rs) => { const c = [...rs]; c[bi] = fn(c[bi] ?? blank()); return c; });
   const nextBlock = (bi: number) => setStep(bi + 1 < n ? { s: 'ready', bi: bi + 1 } : { s: 'done' });
 
@@ -69,10 +80,11 @@ export function SessionScreen({ id }: { id?: string }) {
     saved.current = true;
     const rec: SessionRecord = {
       id: uid(), date: localDate(), routineId: routine.baseId ?? routine.id, routineName: routine.name,
+      unverified: hasVerify && !usedCam.current ? true : undefined,
       totalSec: Math.round(results.reduce((a, r) => a + (r?.actualSec ?? 0), 0)),
       blocks: routine.blocks.map((b, i) => {
         const ex = exerciseById(b.exerciseId)!; const r = results[i] ?? blank();
-        return { exerciseId: b.exerciseId, name: ex.name, plannedSec: plan[i].reduce((a, s) => a + stepSeconds(s), 0), actualSec: Math.round(r.actualSec), completed: r.completed,
+        return { exerciseId: b.exerciseId, name: ex.name, plannedSec: plan[i].reduce((a, s) => a + stepSeconds(s), 0), actualSec: Math.round(r.actualSec), completed: r.completed, verifiedSec: r.verifiedSec === undefined ? undefined : Math.round(r.verifiedSec),
           reps: ex.blockType === 'reps' ? { left: r.left, right: r.right, any: r.any } : undefined, hurt: r.hurt };
       }),
     };
@@ -102,22 +114,28 @@ export function SessionScreen({ id }: { id?: string }) {
     const { bi, si } = step;
     const st = plan[bi][si];
     const ex = exOf(bi);
-    const finishStep = (sec: number, reps?: number, side?: string) => {
-      bump(bi, (r) => ({ ...r, actualSec: r.actualSec + sec, left: r.left + (side?.startsWith('Left') ? reps ?? 0 : 0), right: r.right + (side?.startsWith('Right') ? reps ?? 0 : 0), any: r.any + (reps && !side ? reps : 0) }));
+    const finishStep = (sec: number, reps?: number, side?: string, verifiedSec?: number) => {
+      if (verifiedSec !== undefined) usedCam.current = true;
+      bump(bi, (r) => ({ ...r, actualSec: r.actualSec + sec, verifiedSec: verifiedSec === undefined ? r.verifiedSec : (r.verifiedSec ?? 0) + verifiedSec, left: r.left + (side?.startsWith('Left') ? reps ?? 0 : 0), right: r.right + (side?.startsWith('Right') ? reps ?? 0 : 0), any: r.any + (reps && !side ? reps : 0) }));
       if (si + 1 < plan[bi].length) setStep({ s: 'run', bi, si: si + 1 });
       else { bump(bi, (r) => ({ ...r, completed: true })); nextBlock(bi); }
     };
     const skipBlock = () => nextBlock(bi);
+    // The camera could not see you for too long, so this block does not count.
+    const failBlock = (sec: number, verified = 0) => { usedCam.current = true; bump(bi, (r) => ({ ...r, actualSec: r.actualSec + sec, verifiedSec: (r.verifiedSec ?? 0) + verified, camFailed: true })); nextBlock(bi); };
+    const watched = camActive && ex.verify !== 'none';
     if (st.type === 'reps') {
       return <RepsRun key={`${bi}-${si}`} label={ex.name} reps={st.reps} side={st.side} caption={st.caption} next={nextLabel(bi, si)}
-        onDone={(c, sec) => finishStep(sec, c, st.side)} onSkip={skipBlock} />;
+        verifier={watched && ex.verify === 'reps' ? ver : undefined} onFail={(sec) => failBlock(sec)}
+        onDone={(c, sec, verified) => finishStep(sec, c, st.side, verified ? sec : undefined)} onSkip={skipBlock} />;
     }
     const prev = plan[bi][si - 1];
     return (
       <BlockRun key={`${bi}-${si}`} kind={st.phase} label={ex.name} segments={st.segments} sideLabels={st.sideLabels} caption={st.caption} cfg={cfg}
         phaseChange={st.phase === 'work' && prev?.type === 'timed' && prev.phase === 'rest'} next={nextLabel(bi, si)}
         skipLabel={st.phase === 'rest' ? 'Skip rest' : 'Skip block'}
-        onDone={(sec) => finishStep(sec)} onSkip={st.phase === 'rest' ? () => finishStep(0) : skipBlock} />
+        verifier={watched && st.phase === 'work' ? ver : undefined} verifyMode={ex.verify === 'motion' ? 'motion' : 'presence'} onFail={failBlock}
+        onDone={(sec, vsec) => finishStep(sec, undefined, undefined, vsec)} onSkip={st.phase === 'rest' ? () => finishStep(0) : skipBlock} />
     );
   };
 
@@ -145,12 +163,17 @@ export function SessionScreen({ id }: { id?: string }) {
           <button class="btn-primary" onClick={test}><Volume2 size={22} aria-hidden="true" /> Play test beep</button>
           <p class="sub note">{n} blocks, about {routineMinutes(routine)} minutes.</p>
           {makeUp && <p class="sub note warn">Strict mode added a make-up round at the end of this session.</p>}
+          {hasVerify && <p class="sub note">{wantCam ? 'Some blocks use the camera to check you are really doing the work.' : 'Camera check is off, so this session will be marked unverified and earns half XP.'}</p>}
           {reminders.size > 0 && <p class="sub note warn">This routine stretches before a dynamic warm-up. Do a few leg swings first.</p>}
-          <button class="btn-primary" style={{ marginTop: '28px' }} disabled={!tested || n === 0} onClick={() => setStep({ s: 'ready', bi: 0 })}>Start</button>
+          <button class="btn-primary" style={{ marginTop: '28px' }} disabled={!tested || n === 0} onClick={() => setStep(wantCam && ver.status !== 'ready' ? { s: 'camera' } : { s: 'ready', bi: 0 })}>Start</button>
           {!tested && <p class="sub hint">Play the test beep to continue.</p>}
           <button class="link-btn" style={{ margin: '16px auto 0' }} onClick={() => setTimeOpen(true)}>Short on time?</button>
           {timeOpen && <TimeSheet routine={routine} onClose={() => setTimeOpen(false)} />}
         </>
+      )}
+
+      {step.s === 'camera' && (
+        <CameraSetup v={ver} onStart={() => setStep({ s: 'ready', bi: 0 })} onHonor={() => { ver.stop(); setHonorNow(true); setStep({ s: 'ready', bi: 0 }); }} />
       )}
 
       {step.s === 'ready' && (
@@ -181,7 +204,7 @@ export function SessionScreen({ id }: { id?: string }) {
               return (
                 <li>
                   <span class="grow"><b>{ex.name}</b>
-                    <span class="sub block">{r.completed ? 'Done' : r.hurt ? 'Stopped, something hurt' : 'Skipped'}{ex.blockType === 'reps' && r.completed ? `, ${r.left + r.right + r.any} reps` : ''}</span>
+                    <span class="sub block">{r.completed ? 'Done' : r.hurt ? 'Stopped, something hurt' : r.camFailed ? 'Not completed, the camera could not see you' : 'Skipped'}{r.verifiedSec !== undefined ? `, ${mmss(r.verifiedSec)} verified` : ''}{ex.blockType === 'reps' && r.completed ? `, ${r.left + r.right + r.any} reps` : ''}</span>
                   </span>
                   <b>{mmss(r.actualSec)}</b>
                 </li>
@@ -193,6 +216,7 @@ export function SessionScreen({ id }: { id?: string }) {
         </>
       )}
 
+      {step.s !== 'camera' && ver.status !== 'off' && <CameraPreview v={ver} />}
       {inRun && step.s === 'run' && <button class="discard hurt" onClick={() => hurt(step.bi)}>Something hurt</button>}
       {inRun && <button class="discard" onClick={() => setSheet(true)}>Quit session</button>}
 
