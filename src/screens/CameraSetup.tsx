@@ -6,12 +6,14 @@ import { audio, vibrate } from '../engine/audio';
 import { wakeLockSupported } from '../engine/wakelock';
 import { DEFAULT_REP_CONFIG } from '../vision/repCounter';
 import { Tracker } from '../vision/tracker';
+import { learnFromSamples, type Learned } from '../vision/profiles';
 import type { Verifier } from '../vision/useVerifier';
 
 const DETECTED_HOLD_MS = 1000;
 const CAL_KICKS = 3;
 const CAL_GIVE_UP_MS = 45000;
 const CAL_HINT_MS = 12000;
+const TRAIN_MS = 10000;
 
 /**
  * Before the first checked block: privacy, permission, framing and an optional 3-kick calibration.
@@ -23,17 +25,20 @@ export function CameraSetup({ v, onStart, onHonor }: { v: Verifier; onStart: () 
   const [cal, setCal] = useState<'idle' | 'running' | 'done' | 'failed'>('idle');
   const [peaks, setPeaks] = useState<number[]>([]);
   const [calSec, setCalSec] = useState(0);
+  const [train, setTrain] = useState<'idle' | 'running'>('idle');
+  const [trainLeft, setTrainLeft] = useState(0);
+  const [learned, setLearned] = useState<Learned | null>(null);
   const since = useRef<number | null>(null);
   const started = useRef(false);
 
   // "Detected" must hold for a second before anything starts.
   useEffect(() => {
-    if (v.frame?.inFrame) { since.current ??= performance.now(); setHeldMs(performance.now() - since.current); }
+    if (v.frame?.present) { since.current ??= performance.now(); setHeldMs(performance.now() - since.current); }
     else { since.current = null; setHeldMs(0); }
   }, [v.frame]);
 
   const ready = v.status === 'ready';
-  const steady = ready && !!v.frame?.inFrame && heldMs >= DETECTED_HOLD_MS;
+  const steady = ready && !!v.frame?.present && heldMs >= DETECTED_HOLD_MS;
 
   // Start was pressed earlier: begin by itself as soon as you are in frame.
   useEffect(() => {
@@ -71,6 +76,27 @@ export function CameraSetup({ v, onStart, onHonor }: { v: Verifier; onStart: () 
     return () => clearInterval(id);
   }, [cal === 'running']);
 
+  // Training: watch you do your normal exercise for 10 seconds and fit the settings to you.
+  useEffect(() => {
+    if (train !== 'running') return;
+    const samples: { present: boolean; motion: number }[] = [];
+    const t0 = performance.now();
+    const id = setInterval(() => {
+      const f = v.frameRef.current;
+      samples.push({ present: !!f?.present, motion: f?.motion ?? 0 });
+      const left = Math.max(0, TRAIN_MS - (performance.now() - t0));
+      setTrainLeft(Math.ceil(left / 1000));
+      if (left <= 0) {
+        clearInterval(id);
+        const r = learnFromSamples(samples);
+        setLearned(r); setTrain('idle');
+        if (r.ok) camera.set((c) => ({ ...c, motionThreshold: r.moveThreshold }));
+        audio.play(r.ok ? 'bell' : 'low'); vibrate(r.ok ? 'double' : 'short');
+      }
+    }, 100);
+    return () => clearInterval(id);
+  }, [train]);
+
   const begin = () => {
     if (steady) { started.current = true; audio.play('high'); vibrate('short'); onStart(); }
     else setArmed(true);
@@ -92,11 +118,12 @@ export function CameraSetup({ v, onStart, onHonor }: { v: Verifier; onStart: () 
             <CameraPreview v={v} big />
             <svg viewBox="0 0 100 150" class="outline" aria-hidden="true"><circle cx="50" cy="20" r="9" /><path d="M50 29 V80 M50 40 L28 66 M50 40 L72 66 M50 80 L34 138 M50 80 L66 138" /></svg>
           </div>
-          <p class={`sub note ${v.frame?.inFrame ? '' : 'warn'}`} role="status">
+          <p class={`sub note ${v.frame?.present ? '' : 'warn'}`} role="status">
             {v.status === 'starting' ? 'Loading the body tracker, one moment...'
               : armed && !steady ? 'Get into position. It starts by itself when it sees you.'
-              : v.frame?.inFrame ? `Detected. ${heldMs >= DETECTED_HOLD_MS ? 'Ready.' : 'Hold still for a second...'}`
-              : v.frame?.message ?? 'Step back so your whole body is in view.'}
+              : v.frame?.present ? `Detected. ${heldMs >= DETECTED_HOLD_MS ? 'Ready.' : 'Hold still for a second...'}`
+              : v.frame?.message ?? 'I cannot see you. Step back a little or into the light.'}
+            {v.frame?.present && !v.frame.inFrame ? ' I can see you, but not all of you. That is fine for stretches. Kick counting needs your legs in view.' : ''}
           </p>
 
           <ul class="cues">
@@ -106,6 +133,10 @@ export function CameraSetup({ v, onStart, onHonor }: { v: Verifier; onStart: () 
             <li>The screen stays on while you train, so keep the phone plugged in. The camera uses battery.</li>
             {!wakeLockSupported() && <li><b>This browser cannot keep the screen on by itself.</b> Set Auto-Lock to Never while you train, or the camera will stop.</li>}
           </ul>
+
+          {train === 'idle' && ready && <button class="btn-ghost" onClick={() => { setLearned(null); setTrainLeft(Math.ceil(TRAIN_MS / 1000)); setTrain('running'); }}>Train it to my setup (10 seconds)</button>}
+          {train === 'running' && <div class="cal-box" role="status" aria-live="polite"><b>Do your normal exercise now</b><p class="sub">Stretch, swing your legs or kick as you usually would. {trainLeft} s left.</p></div>}
+          {learned && <div class={`cal-box ${learned.ok ? 'ok' : ''}`} role="status">{learned.ok ? <Check size={26} aria-hidden="true" /> : null} <b>{learned.ok ? 'Trained to your setup' : 'Could not train'}</b><p class="sub">Seen in {Math.round(learned.presentRate * 100)} percent of the time. {learned.advice}</p></div>}
 
           {cal === 'idle' && ready && <button class="btn-ghost" onClick={() => { setPeaks([]); setCalSec(0); setCal('running'); }}>Optional: calibrate with 3 kicks</button>}
           {cal === 'running' && (

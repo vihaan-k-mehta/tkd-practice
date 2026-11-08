@@ -27,11 +27,13 @@ export const progress = createStore<Progress>('tkd.progress.v1', freshProgress(l
 /** What the last app-open judged, shown once on Today. */
 export const notice = createStore<{ lines: string[] }>('tkd.notice.v1', { lines: [] }, (v) => ({ lines: Array.isArray((v as { lines?: unknown })?.lines) ? ((v as { lines: unknown[] }).lines).filter((x): x is string => typeof x === 'string').slice(0, 10).map((x) => x.slice(0, 140)) : [] }));
 
-export interface CameraSettings { use: boolean; honor: boolean; skeleton: boolean; kickHeight?: number }
-export const camera = createStore<CameraSettings>('tkd.camera.v1', { use: true, honor: false, skeleton: false }, (v, d) => {
+export interface CameraSettings { use: boolean; honor: boolean; skeleton: boolean; kickHeight?: number; sensitivity: 'relaxed' | 'normal' | 'strict'; quality: 'full' | 'lite'; motionThreshold?: number }
+export const camera = createStore<CameraSettings>('tkd.camera.v1', { use: true, honor: false, skeleton: false, sensitivity: 'relaxed', quality: 'full' }, (v, d) => {
   const o = (v ?? {}) as Record<string, unknown>;
   const kh = typeof o.kickHeight === 'number' && Number.isFinite(o.kickHeight) ? Math.max(-1, Math.min(1, o.kickHeight)) : undefined;
-  return { use: o.use !== false, honor: o.honor === true, skeleton: o.skeleton === true, kickHeight: kh, ...(d && {}) };
+  const mt = typeof o.motionThreshold === 'number' && Number.isFinite(o.motionThreshold) ? Math.max(0.02, Math.min(0.5, o.motionThreshold)) : undefined;
+  const sens = o.sensitivity === 'normal' || o.sensitivity === 'strict' ? o.sensitivity : d.sensitivity;
+  return { use: o.use !== false, honor: o.honor === true, skeleton: o.skeleton === true, kickHeight: kh, sensitivity: sens, quality: o.quality === 'lite' ? 'lite' : 'full', motionThreshold: mt };
 });
 
 export const uid =() => Math.random().toString(36).slice(2, 10);

@@ -6,7 +6,8 @@ import { evenKicks, synthClip } from '../helpers/synth';
 // and the "searching" state when nobody is in view.
 test.use({ launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] }, permissions: ['camera'] });
 
-test('camera setup loads the model under the CSP, shows searching, keeps Start disabled, then honor mode continues', async ({ page }) => {
+test('camera setup loads the model under the CSP, shows searching, Start arms, calibration and training run, then honor mode continues', async ({ page }) => {
+  test.setTimeout(90000);
   const problems: string[] = [];
   page.on('console', (m) => { if (/content security policy|refused to/i.test(m.text())) problems.push(m.text()); });
   page.on('pageerror', (e) => problems.push(String(e)));
@@ -20,7 +21,7 @@ test('camera setup loads the model under the CSP, shows searching, keeps Start d
   await page.getByRole('button', { name: 'Allow camera' }).click();
 
   await expect(page.getByText(/Camera on, searching/)).toBeVisible({ timeout: 60000 });
-  await expect(page.getByText(/Step back so your whole body is in view/).first()).toBeVisible();
+  await expect(page.getByText(/Step back a little or into the light/).first()).toBeVisible();
   // Start can be pressed from across the room: it arms and waits to see you.
   await expect(page.getByRole('button', { name: 'Start when I am in frame' })).toBeEnabled();
   await page.getByRole('button', { name: 'Start when I am in frame' }).click();
@@ -34,6 +35,13 @@ test('camera setup loads the model under the CSP, shows searching, keeps Start d
   await expect(page.getByLabel('0 of 3 kicks seen')).toBeVisible();
   await page.screenshot({ path: 'screenshots/m7-calibrating.png', fullPage: true });
   await page.getByRole('button', { name: 'Cancel calibration' }).click();
+
+  // Training reports honestly when it could not see anyone, and changes nothing.
+  await page.getByRole('button', { name: /Train it to my setup/ }).click();
+  await expect(page.getByText('Do your normal exercise now')).toBeVisible();
+  await expect(page.getByText('Could not train')).toBeVisible({ timeout: 20000 });
+  await expect(page.getByText(/I could not see you for much of that/)).toBeVisible();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('tkd.camera.v1') || '{}').motionThreshold)).toBeUndefined();
   await page.screenshot({ path: 'screenshots/m7-setup.png', fullPage: true });
 
   // The camera light goes off when we leave the checked flow.
@@ -59,4 +67,15 @@ test('debug page counts kicks from a landmark file, in the real browser', async 
   await expect(page.getByTestId('left')).toHaveText('10');
   await expect(page.getByTestId('right')).toHaveText('0');
   await expect(page.getByText(/left kick at/i).first()).toBeVisible();
+});
+
+test('sensitivity and tracking quality are choices that stick, relaxed and accurate by default', async ({ page }) => {
+  await page.goto('./#/settings');
+  await expect(page.getByRole('radio', { name: 'Relaxed' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio', { name: 'Accurate' })).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('radio', { name: 'Strict' }).click();
+  await page.getByRole('radio', { name: 'Fast' }).click();
+  await page.reload();
+  await expect(page.getByRole('radio', { name: 'Strict' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio', { name: 'Fast' })).toHaveAttribute('aria-checked', 'true');
 });

@@ -9,7 +9,7 @@ export function CameraPreview({ v, big = false }: { v: Verifier; big?: boolean }
   const canvas = useRef<HTMLCanvasElement>(null);
   const cam = camera.use();
   const on = v.status === 'ready' || v.status === 'starting';
-  const detected = !!v.frame?.inFrame;
+  const detected = !!v.frame?.present;
 
   useEffect(() => { v.attach(); }, [v.status]);
 

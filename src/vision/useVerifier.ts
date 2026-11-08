@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { camMessage, openCamera, stopStream, type CamError } from './camera';
 import { Gate, type GateView } from './gate';
+import { profileFor } from './profiles';
 import { loadPose, toLandmarks } from './pose';
 import { DEFAULT_REP_CONFIG } from './repCounter';
 import { Tracker, type Frame } from './tracker';
@@ -52,11 +53,12 @@ export function useVerifier() {
     if (running.current) return true;
     setStatus('starting'); setError('');
     try {
-      const kh = camera.get().kickHeight;
-      tracker.current = new Tracker(kh === undefined ? undefined : { ...DEFAULT_REP_CONFIG, kickHeight: kh });
+      const cs = camera.get();
+      const prof = profileFor(cs.sensitivity, cs.motionThreshold);
+      tracker.current = new Tracker(cs.kickHeight === undefined ? undefined : { ...DEFAULT_REP_CONFIG, kickHeight: cs.kickHeight }, prof);
       const [s, pose] = await Promise.all([
         openCamera(),
-        loadPose().catch(() => { throw Object.assign(new Error('model'), { kind: 'model' as CamError }); }),
+        loadPose(cs.quality).catch(() => { throw Object.assign(new Error('model'), { kind: 'model' as CamError }); }),
       ]);
       stream.current = s;
       if (!video.current) { stopStream(s); throw Object.assign(new Error('busy'), { kind: 'busy' as CamError }); }
@@ -75,7 +77,7 @@ export function useVerifier() {
           lmRef.current = lm;
           const f = tracker.current.update(now, lm);
           frameRef.current = f;
-          const g = gateRef.current?.update(now, { person: f.inFrame, moving: f.moving });
+          const g = gateRef.current?.update(now, { person: f.present, moving: f.moving });
           if (now - lastUi.current > 100) { lastUi.current = now; setFrame(f); if (g) setGate(g); }
         }
         raf.current = requestAnimationFrame(tick);
@@ -94,7 +96,8 @@ export function useVerifier() {
   /** Start judging a block. Presence for stretches, motion for bag work and drills. */
   const beginBlock = useCallback((mode: 'presence' | 'motion') => {
     tracker.current.reset();
-    gateRef.current = new Gate(mode);
+    const cs = camera.get();
+    gateRef.current = new Gate(mode, profileFor(cs.sensitivity, cs.motionThreshold).gate);
     setGate(gateRef.current.state);
   }, []);
   const readGate = useCallback(() => gateRef.current?.state ?? null, []);

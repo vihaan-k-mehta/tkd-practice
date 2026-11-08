@@ -46,6 +46,20 @@ export function Settings() {
         <Toggle label="Honor mode" on={cam.honor} set={(v) => camera.set((c) => ({ ...c, honor: v }))} hint="Skip the camera for bad light or a broken camera. Sessions are marked unverified, earn half XP and stay off leaderboards." />
         <Toggle label="Show skeleton overlay" on={cam.skeleton} set={(v) => camera.set((c) => ({ ...c, skeleton: v }))} hint="For debugging only." />
       </ul>
+      <p class="eyebrow">How strict is the camera</p>
+      <div class="seg-row" role="radiogroup" aria-label="Camera sensitivity" style={{ marginTop: '0px' }}>
+        {(['relaxed', 'normal', 'strict'] as const).map((s) => (
+          <button class={`seg ${cam.sensitivity === s ? 'on' : ''}`} role="radio" aria-checked={cam.sensitivity === s} onClick={() => camera.set((c) => ({ ...c, sensitivity: s }))}>{s[0].toUpperCase() + s.slice(1)}</button>
+        ))}
+      </div>
+      <p class="sub note">Relaxed forgives short dropouts and slow movement, and only needs part of you in view. Strict follows the original rules: whole body, quick to pause.</p>
+      <p class="eyebrow">Tracking quality</p>
+      <div class="seg-row" role="radiogroup" aria-label="Tracking quality" style={{ marginTop: '0px' }}>
+        <button class={`seg ${cam.quality === 'full' ? 'on' : ''}`} role="radio" aria-checked={cam.quality === 'full'} onClick={() => camera.set((c) => ({ ...c, quality: 'full' }))}>Accurate</button>
+        <button class={`seg ${cam.quality === 'lite' ? 'on' : ''}`} role="radio" aria-checked={cam.quality === 'lite'} onClick={() => camera.set((c) => ({ ...c, quality: 'lite' }))}>Fast</button>
+      </div>
+      <p class="sub note">Accurate follows you better, including on the floor, but needs a newer phone. Switch to Fast if it feels slow.</p>
+      {cam.motionThreshold !== undefined && <button class="btn-ghost" onClick={() => camera.set((c) => ({ ...c, motionThreshold: undefined }))}>Forget my movement training</button>}
       <p class="sub note">Video stays on this phone. Nothing is recorded or sent. A single camera can confirm you are in view, moving and throwing real kicks. It cannot judge fine technique, so it is not a coach.</p>
       {cam.kickHeight !== undefined && <button class="btn-ghost" onClick={() => camera.set((c) => ({ ...c, kickHeight: undefined }))}>Reset kick height calibration</button>}
 
