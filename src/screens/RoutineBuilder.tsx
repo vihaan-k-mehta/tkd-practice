@@ -61,7 +61,7 @@ export function RoutineBuilder({ id }: { id?: string }) {
       </header>
 
       <label class="eyebrow" for="rname">Name</label>
-      <input id="rname" class="field" value={draft.name} onInput={(e) => change((r) => ({ ...r, name: (e.target as HTMLInputElement).value }))} />
+      <input id="rname" class="field" maxLength={60} value={draft.name} onInput={(e) => change((r) => ({ ...r, name: (e.target as HTMLInputElement).value }))} />
       <p class="sub note">About {routineMinutes(draft)} minutes, {draft.blocks.length} blocks.{isTemplate && !dirty ? ' Changing a template saves your own copy.' : ''}</p>
 
       {draft.blocks.length === 0 ? <p class="empty">Nothing in this routine yet. Add an exercise.</p> : (

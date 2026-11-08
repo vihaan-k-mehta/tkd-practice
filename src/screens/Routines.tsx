@@ -8,11 +8,13 @@ import { equipment, userRoutines } from '../data/library';
 import { equipmentNeeded, routineMinutes } from '../engine/plan';
 import { EQUIPMENT_LABEL, type Exercise, type Routine } from '../data/types';
 import { go } from '../app/router';
+import { ExerciseAnim } from '../anim/ExerciseAnim';
 
 export function ExerciseDetail({ ex, onClose }: { ex: Exercise; onClose: () => void }) {
   return (
     <Sheet title={ex.name} onClose={onClose}>
       <p class="sub" style={{ marginBottom: '12px' }}>{ex.category}{ex.equipment.length ? `, needs ${ex.equipment.map((e) => EQUIPMENT_LABEL[e].toLowerCase()).join(' and ')}` : ''}</p>
+      <ExerciseAnim id={ex.id} />
       <ul class="cues">{ex.cues.map((c) => <li>{c}</li>)}</ul>
       <p class="sub note">
         {ex.verify === 'none' ? 'The camera does not check this exercise.' :
@@ -20,7 +22,7 @@ export function ExerciseDetail({ ex, onClose }: { ex: Exercise; onClose: () => v
           ex.verify === 'motion' ? 'The camera checks you are moving.' : 'The camera counts your kicks.'}
         {ex.needsPartner ? ' Needs a partner.' : ''}
       </p>
-      <p class="sub note">No demo clip recorded yet.</p>
+      <p class="sub note">A simplified drawing, not a replacement for your instructor. Record your own clip to add it here.</p>
     </Sheet>
   );
 }

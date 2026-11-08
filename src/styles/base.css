@@ -157,3 +157,24 @@ body[data-phase='rest'] .blobs { display: none; }
 .cal-day.st-missed { border-style: dashed; border-color: var(--ink); }
 .cal-day.st-partial { border-color: var(--ink); }
 .cal-day.is-today { border: var(--bw, 2.5px) solid var(--ink); font-weight: 700; }
+
+/* Exercise animations */
+.anim { display: flex; justify-content: center; }
+.anim.large { margin: 8px 0 14px; }
+.anim.large .figure { width: min(100%, 260px); height: auto; }
+.anim.small .figure { width: min(100%, 150px); height: auto; }
+.figure { color: var(--ink); overflow: visible; }
+.figure polyline { fill: none; stroke: currentColor; stroke-width: 4.5; stroke-linecap: round; stroke-linejoin: round; }
+.fig-far polyline { opacity: 0.4; }
+.fig-body { stroke-width: 5.5 !important; }
+.fig-head { fill: var(--surface); stroke: currentColor; stroke-width: 3.5; }
+.fig-floor { stroke: var(--line); stroke-width: 2; stroke-linecap: round; }
+.fig-prop { stroke: var(--sub); stroke-width: 2.5; }
+.fig-bag { fill: var(--belt); stroke: currentColor; stroke-width: 2.5; }
+.fig-weight { fill: var(--accent); stroke: currentColor; stroke-width: 1.5; }
+.fig-band { stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 5 3; }
+.fig-rope { stroke: var(--accent); stroke-width: 2.5; }
+.anim-grid { display: grid; gap: 16px; }
+.anim-cell { background: var(--surface); border-radius: 18px; padding: 10px; border: 1px solid var(--line); }
+.anim-frames { display: grid; grid-template-columns: repeat(4, 1fr); }
+@media (prefers-reduced-motion: reduce) { .figure * { transition: none; } }

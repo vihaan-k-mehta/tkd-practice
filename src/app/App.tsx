@@ -6,6 +6,7 @@ import { Routines } from '../screens/Routines';
 import { RoutineBuilder } from '../screens/RoutineBuilder';
 import { Placeholder } from '../screens/Placeholder';
 import { SchedulePage } from '../screens/Schedule';
+import { AnimSheet } from '../screens/AnimSheet';
 import { Settings } from '../screens/Settings';
 
 export function App() {
@@ -22,6 +23,7 @@ export function App() {
       {name === 'quests' && <Placeholder title="Quests" note="No quests yet." />}
       {name === 'ranks' && <Placeholder title="Ranks" note="No group yet." />}
       {name === 'settings' && <Settings />}
+      {name === 'animations' && <AnimSheet />}
       {name !== 'session' && <TabBar route={tab} />}
     </>
   );

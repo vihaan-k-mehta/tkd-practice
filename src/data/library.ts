@@ -1,9 +1,10 @@
 import { createStore } from './store';
+import { cleanRoutines, cleanSchedule } from './sanitize';
 import { TEMPLATES } from './templates';
 import type { Equipment, Routine } from './types';
 import { emptySchedule, type Schedule } from '../engine/schedule';
 
-export const userRoutines = createStore<Routine[]>('tkd.routines.v1', []);
+export const userRoutines = createStore<Routine[]>('tkd.routines.v1', [], (v) => cleanRoutines(v));
 export const equipment = createStore<Record<Equipment, boolean>>('tkd.equipment.v1', { ankleWeights: true, bands: true, heavyBag: true, rope: true, box: true });
 export const lastRoutine = createStore<{ id: string }>('tkd.last.v1', { id: 'daily-stretch' });
 
@@ -17,11 +18,11 @@ export const history = createStore<SessionRecord[]>('tkd.history.v1', []);
 export function localDate(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
-export const schedule = createStore<Schedule>('tkd.schedule.v1', emptySchedule(localDate()));
+export const schedule = createStore<Schedule>('tkd.schedule.v1', emptySchedule(localDate()), (v, d) => cleanSchedule(v, d));
 
 export const uid =() => Math.random().toString(36).slice(2, 10);
 /** The most recent shortened routine, so a session can run it without cluttering the saved list. */
-export const quickRoutine = createStore<{ routine?: Routine }>('tkd.quick.v1', {});
+export const quickRoutine = createStore<{ routine?: Routine }>('tkd.quick.v1', {}, (v) => ({ routine: cleanRoutines([(v as { routine?: unknown })?.routine])[0] }));
 export const getRoutine = (id: string, mine: Routine[] = userRoutines.get()): Routine | undefined =>
   TEMPLATES.find((t) => t.id === id) ?? mine.find((r) => r.id === id) ?? (quickRoutine.get().routine?.id === id ? quickRoutine.get().routine : undefined);
 

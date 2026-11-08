@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'preact/hooks';
 
 /** Tiny persistent store: localStorage-backed, subscribable, safe if storage is blocked. */
-export function createStore<T>(key: string, initial: T) {
+export function createStore<T>(key: string, initial: T, clean?: (parsed: unknown, initial: T) => T) {
   let cur: T = initial;
   try {
     const raw = localStorage.getItem(key);
-    if (raw) cur = typeof initial === 'object' && !Array.isArray(initial) ? { ...initial, ...JSON.parse(raw) } : JSON.parse(raw);
+    if (raw && clean) cur = clean(JSON.parse(raw), initial);
+    else if (raw) cur = typeof initial === 'object' && !Array.isArray(initial) ? { ...initial, ...JSON.parse(raw) } : JSON.parse(raw);
   } catch { /* use defaults */ }
   const subs = new Set<() => void>();
   const get = () => cur;

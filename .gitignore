@@ -3,3 +3,9 @@ dist
 test-results
 screenshots
 *.log
+
+.env
+.env.*
+!.env.example
+*.pem
+*.key

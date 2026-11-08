@@ -3,6 +3,7 @@ import { ChevronDown, Volume2 } from 'lucide-preact';
 import { BlockRun } from './BlockRun';
 import { RepsRun } from './RepsRun';
 import { Sheet } from '../app/Sheet';
+import { ExerciseAnim } from '../anim/ExerciseAnim';
 import { TimeSheet } from '../app/TimeSheet';
 import { useAlerts } from '../data/settings';
 import { audio } from '../engine/audio';
@@ -141,6 +142,7 @@ export function SessionScreen({ id }: { id?: string }) {
           <BlockRun key={`r${step.bi}`} kind="ready" label={exOf(step.bi).name} segments={[READY_SEC]} cfg={cfg} timeline={READY_TIMELINE}
             skipLabel="Skip countdown" onDone={() => setStep({ s: 'run', bi: step.bi, si: 0 })} onSkip={() => setStep({ s: 'run', bi: step.bi, si: 0 })} />
           {reminders.has(step.bi) && <p class="sub note warn">Warm up before deep stretching. Do a few leg swings first.</p>}
+          <ExerciseAnim id={exOf(step.bi).id} size="small" />
           <ul class="cues">{exOf(step.bi).cues.map((c) => <li>{c}</li>)}</ul>
         </>
       )}
