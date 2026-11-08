@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 
-export type Route = 'today' | 'routines' | 'schedule' | 'quests' | 'ranks' | 'settings';
-const routes: Route[] = ['today', 'routines', 'schedule', 'quests', 'ranks', 'settings'];
+export type Route = 'today' | 'routines' | 'schedule' | 'quests' | 'ranks' | 'settings' | 'session';
+const routes: Route[] = ['today', 'routines', 'schedule', 'quests', 'ranks', 'settings', 'session'];
 
 function read(): Route {
   const h = location.hash.replace(/^#\/?/, '') as Route;

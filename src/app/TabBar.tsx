@@ -14,8 +14,8 @@ export function TabBar({ route }: { route: Route }) {
     <nav class="tabbar" aria-label="Main">
       {tabs.map(({ id, label, Icon }) => (
         <a class="tab" href={`#/${id}`} aria-current={route === id ? 'page' : undefined}>
-          <Icon size={24} strokeWidth={1.75} aria-hidden="true" />
-          {label}
+          <Icon size={24} strokeWidth={2} aria-hidden="true" />
+          <span>{label}</span>
         </a>
       ))}
     </nav>

@@ -1,43 +1,40 @@
 @font-face {
-  font-family: 'Archivo';
-  src: url('/tkd-practice/fonts/archivo-latin-wdth-normal.woff2') format('woff2');
-  font-weight: 100 900;
-  font-stretch: 62% 125%;
+  font-family: 'Fredoka';
+  src: url('/tkd-practice/fonts/fredoka-latin-wght-normal.woff2') format('woff2');
+  font-weight: 300 700;
   font-display: swap;
 }
 
 :root {
-  --mat: #F4F6F8;
+  --bg: #FFF8F0;
   --surface: #FFFFFF;
-  --ink: #1C2733;
-  --muted: #5B6773;
-  --line: #D5DADF;
-  --hong: #C23B32;
-  --on-hong: #FFFFFF;
-  --chung: #2A5DA8;
-  --belt: #D9A21B;
-
-  --radius-control: 6px;
-  --radius-sheet: 14px;
-  --tab-h: 64px;
-  --gutter: 20px;
-
-  --fs-14: 0.875rem;
-  --fs-16: 1rem;
-  --fs-20: 1.25rem;
-  --fs-28: 1.75rem;
-  --fs-40: 2.5rem;
+  --ink: #1E1533;
+  --sub: #6F6590;
+  --line: #E9E2F2;
+  --accent: #F2677A;
+  --accent-soft: #FDE3E7;
+  --on-accent: #FFFFFF;
+  --good: #1F8F4E;
+  --belt: #FFD54A;
+  --blue: #3E7BE0;
+  --warn: #E8473F;
+  --bw: 2.5px;
+  --shadow: 4px 5px 0 var(--ink);
+  --radius-control: 16px;
+  --radius-card: 28px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --mat: #151C24;
-    --surface: #1E2731;
-    --ink: #EEF1F4;
-    --muted: #9AA6B2;
-    --line: #2E3945;
-    --hong: #E0574D;
-    --on-hong: #151C24;
-    --chung: #5C8FD6;
+    --bg: #000000;
+    --surface: #0E0E12;
+    --ink: #F5F5F7;
+    --sub: #8E8E99;
+    --line: #1D1D24;
+    --accent: #3B82F6;
+    --accent-soft: #11213D;
+    --good: #5BD17F;
+    --bw: 0px;
+    --shadow: none;
   }
 }
