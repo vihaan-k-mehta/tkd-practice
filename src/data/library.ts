@@ -1,0 +1,27 @@
+import { createStore } from './store';
+import { TEMPLATES } from './templates';
+import type { Equipment, Routine } from './types';
+
+export const userRoutines = createStore<Routine[]>('tkd.routines.v1', []);
+export const equipment = createStore<Record<Equipment, boolean>>('tkd.equipment.v1', { ankleWeights: true, bands: true, heavyBag: true, rope: true, box: true });
+export const lastRoutine = createStore<{ id: string }>('tkd.last.v1', { id: 'daily-stretch' });
+
+export interface SessionRecord {
+  id: string; date: string; routineId: string; routineName: string; totalSec: number;
+  blocks: { exerciseId: string; name: string; plannedSec: number; actualSec: number; completed: boolean; reps?: { left: number; right: number; any: number }; hurt?: boolean }[];
+}
+export const history = createStore<SessionRecord[]>('tkd.history.v1', []);
+
+export const uid = () => Math.random().toString(36).slice(2, 10);
+export const getRoutine = (id: string, mine: Routine[] = userRoutines.get()): Routine | undefined =>
+  TEMPLATES.find((t) => t.id === id) ?? mine.find((r) => r.id === id);
+
+export function saveRoutine(r: Routine) {
+  userRoutines.set((list) => (list.some((x) => x.id === r.id) ? list.map((x) => (x.id === r.id ? r : x)) : [...list, r]));
+}
+export const deleteRoutine = (id: string) => userRoutines.set((l) => l.filter((r) => r.id !== id));
+
+/** Local YYYY-MM-DD, never UTC. */
+export function localDate(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}

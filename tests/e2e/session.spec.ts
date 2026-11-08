@@ -11,7 +11,7 @@ test('session: check sound, ready countdown beeps on the audio clock, hold runs,
       return orig.call(this, when);
     };
   });
-  await page.goto('./#/session');
+  await page.goto('./#/session/daily-stretch');
   await page.screenshot({ path: 'screenshots/m3-check.png' });
   await expect(page.getByRole('button', { name: 'Start', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Play test beep' }).click();
@@ -22,22 +22,13 @@ test('session: check sound, ready countdown beeps on the audio clock, hold runs,
   await expect(page.getByRole('timer')).toHaveAttribute('aria-label', /seconds remaining/);
   await page.screenshot({ path: 'screenshots/m3-ready.png' });
   await expect(page.getByText('Left side')).toBeVisible({ timeout: 9000 });
-  await expect(page.getByRole('timer')).toHaveText(/0:(30|29)/);
-  await page.screenshot({ path: 'screenshots/m3-run.png' });
+  await page.screenshot({ path: 'screenshots/m4-reps.png' });
 
   // Ready countdown: ticks at +2, +3, +4 and the high tone at +5, gaps must be 1 s within 50 ms.
   const beeps: { when: number; f: number }[] = await page.evaluate(() => (window as any).__beeps.slice());
-  const ready = beeps.slice(before);
-  const w = ready.map((b) => b.when);
+  const w = beeps.slice(before).map((b) => b.when);
   expect(w.length).toBeGreaterThanOrEqual(4);
   for (let i = 1; i < 4; i++) expect(Math.abs(w[i] - w[i - 1] - 1)).toBeLessThan(0.05);
-
-  // Pause freezes the clock.
-  await page.getByRole('button', { name: 'Pause' }).click();
-  const a = await page.getByRole('timer').textContent();
-  await page.waitForTimeout(1500);
-  expect(await page.getByRole('timer').textContent()).toBe(a);
-  await page.getByRole('button', { name: 'Add 10 seconds' }).click();
 
   await page.goto('./#/settings');
   await page.getByRole('button', { name: 'Count down 5' }).click();

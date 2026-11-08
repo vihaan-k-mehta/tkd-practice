@@ -122,3 +122,25 @@ body[data-phase='work'] .blobs, body[data-phase='ready'] .blobs, body[data-phase
 .pick.on { color: var(--accent); font-weight: 600; }
 input[type='range'] { width: 100%; accent-color: var(--accent); height: 36px; }
 .run-controls { margin-top: 32px; }
+
+/* Milestone 4 */
+body[data-phase='rest'] { background: #E3E6EB; }
+@media (prefers-color-scheme: dark) { body[data-phase='rest'] { background: #17181C; } }
+body[data-phase='rest'] .blobs { display: none; }
+.row-btn { display: flex; align-items: center; gap: 12px; flex: 1; text-align: left; min-height: 64px; padding: 8px 0; }
+.block { display: block; }
+.warn { color: var(--warn); }
+.warn-btn { color: var(--warn); }
+.cues { margin: 12px 0 0; padding-left: 20px; } .cues li { margin: 6px 0; }
+.blocks .icon-btn:disabled { opacity: 0.25; }
+.btn-ghost { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 52px; margin-top: 14px; border-radius: 18px; border: 2px dashed var(--sub); color: var(--ink); font-weight: 600; }
+.btn-ghost:disabled { opacity: 0.4; }
+.stepper { display: flex; align-items: center; gap: 12px; min-height: 60px; border-bottom: 1px solid var(--line); }
+.step-btn { width: 48px; height: 48px; border-radius: 14px; background: var(--line); font-size: 26px; font-weight: 700; }
+.step-val { min-width: 72px; text-align: center; font-variant-numeric: tabular-nums; }
+.chips-row { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0 2px; }
+.chips-row .seg { flex: none; }
+.clock .of { font-size: 40px; color: var(--sub); }
+.tap-rep { min-height: 88px; font-size: 24px; margin-top: 8px; }
+.hurt { margin-top: 18px; }
+.tap-rep { margin-top: 24px; }

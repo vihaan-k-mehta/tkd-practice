@@ -1,6 +1,8 @@
-import { Ellipsis, Settings as Gear } from 'lucide-preact';
-import { sample } from '../data/sample';
+import { Settings as Gear } from 'lucide-preact';
 import { MatArt } from '../app/MatArt';
+import { getRoutine, history, lastRoutine, userRoutines } from '../data/library';
+import { TEMPLATES } from '../data/templates';
+import { routineMinutes } from '../engine/plan';
 
 export function Header({ title }: { title: string }) {
   return (
@@ -14,44 +16,36 @@ export function Header({ title }: { title: string }) {
   );
 }
 
+const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
 export function Today() {
-  const { next, streak, weekQuest, bw } = sample;
+  const mine = userRoutines.use();
+  const last = lastRoutine.use();
+  const past = history.use();
+  const routine = getRoutine(last.id, mine) ?? TEMPLATES[0];
+  const weekAgo = Date.now() - 7 * 86400_000;
+  const thisWeek = past.filter((h) => new Date(`${h.date}T00:00:00`).getTime() >= weekAgo).length;
+  const latest = past[0];
+
   return (
     <main class="screen">
       <Header title="Today" />
 
       <article class="card">
-        <div class="card-head">
-          <span class="avatar" aria-hidden="true">TK</span>
-          <div class="grow"><strong>Next session</strong><div class="sub">{next.when}</div></div>
-          <button class="icon-btn" aria-label="More options"><Ellipsis size={22} aria-hidden="true" /></button>
-        </div>
-        <hr />
-        <h2>{next.name}</h2>
-        <p class="sub">{next.minutes} minutes, {next.blocks} blocks</p>
-        <div class="media">
-          <MatArt />
-          <div class="chips"><span class="chip">Level {bw.level}</span><span class="chip muted">{bw.weight}</span></div>
-        </div>
-        <div class="stats">
-          <div><span class="sub">Time</span><b>{next.minutes}m</b></div>
-          <div><span class="sub">Blocks</span><b>{next.blocks}</b></div>
-          <div><span class="sub">Streak</span><b>{streak.days}d</b></div>
-        </div>
-        <a class="btn-primary" href="#/session" style={{ textDecoration: 'none', marginTop: 18 }}>Start session</a>
+        <p class="sub">Next session</p>
+        <h2>{routine.name}</h2>
+        <p class="sub">{routineMinutes(routine)} minutes, {routine.blocks.length} blocks</p>
+        <div class="media"><MatArt /></div>
+        <a class="btn-primary" href={`#/session/${routine.id}`} style={{ textDecoration: 'none' }}>Start session</a>
+        <a class="link-btn" href="#/routines" style={{ margin: '8px auto 0' }}>Choose a different routine</a>
       </article>
 
-      <p class="eyebrow">This week</p>
+      <p class="eyebrow">Recent</p>
       <ul class="rowlist">
-        <li>
-          <div class="grow">
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>{weekQuest.label}</span><b>{weekQuest.done} of {weekQuest.of}</b>
-            </div>
-            <div class="progress"><span style={{ width: `${(weekQuest.done / weekQuest.of) * 100}%` }} /></div>
-          </div>
-        </li>
-        <li><span>Bill Wallace</span><b>Level {bw.level}, {bw.weight}</b></li>
+        <li><span>Sessions in the last 7 days</span><b>{thisWeek}</b></li>
+        {latest
+          ? <li><span class="grow">Last session<span class="sub block">{latest.routineName}, {latest.date}</span></span><b>{mmss(latest.totalSec)}</b></li>
+          : <li><span class="sub">No sessions yet. Start one above.</span></li>}
       </ul>
     </main>
   );

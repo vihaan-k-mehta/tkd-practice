@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'preact/hooks';
 
-export type Route = 'today' | 'routines' | 'schedule' | 'quests' | 'ranks' | 'settings' | 'session';
-const routes: Route[] = ['today', 'routines', 'schedule', 'quests', 'ranks', 'settings', 'session'];
+export type Route = 'today' | 'routines' | 'schedule' | 'quests' | 'ranks' | 'settings' | 'session' | 'routine';
+const routes: Route[] = ['today', 'routines', 'schedule', 'quests', 'ranks', 'settings', 'session', 'routine'];
+export interface Loc { name: Route; id?: string }
 
-function read(): Route {
-  const h = location.hash.replace(/^#\/?/, '') as Route;
-  return routes.includes(h) ? h : 'today';
+function read(): Loc {
+  const [n, id] = location.hash.replace(/^#\/?/, '').split('/');
+  return { name: routes.includes(n as Route) ? (n as Route) : 'today', id: id ? decodeURIComponent(id) : undefined };
 }
 
-export function useRoute(): Route {
-  const [r, setR] = useState<Route>(read());
+export function useLoc(): Loc {
+  const [l, setL] = useState<Loc>(read());
   useEffect(() => {
-    const on = () => setR(read());
+    const on = () => setL(read());
     addEventListener('hashchange', on);
     return () => removeEventListener('hashchange', on);
   }, []);
-  return r;
+  return l;
 }
+export const go = (path: string) => { location.hash = `/${path}`; };

@@ -4,6 +4,8 @@ import { Header } from './Today';
 import { setAlerts, useAlerts } from '../data/settings';
 import { PRESETS, parseSeconds, type BeepType, type VibrateMode } from '../engine/alerts';
 import { audio, vibrate, vibrationSupported } from '../engine/audio';
+import { equipment } from '../data/library';
+import { EQUIPMENT_LABEL, type Equipment } from '../data/types';
 
 const beepTypes: { id: BeepType; label: string }[] = [
   { id: 'tick', label: 'Short tick' }, { id: 'double', label: 'Double beep' }, { id: 'triple', label: 'Triple beep' },
@@ -21,6 +23,7 @@ function Toggle({ label, on, set, hint }: { label: string; on: boolean; set: (v:
 
 export function Settings() {
   const a = useAlerts();
+  const own = equipment.use();
   const [times, setTimes] = useState(a.atSecondsRemaining.join(', '));
   const preview = async (t: BeepType) => { await audio.unlock(); audio.setVolume(a.volume); audio.play(t); };
   const commitTimes = (v: string) => { setTimes(v); setAlerts({ atSecondsRemaining: parseSeconds(v) }); };
@@ -32,8 +35,15 @@ export function Settings() {
       <Header title="Settings" />
       <p class="sub">Alert defaults for every timer.</p>
 
+      <p class="eyebrow">Equipment I own</p>
+      <ul class="rowlist">
+        {(Object.keys(EQUIPMENT_LABEL) as Equipment[]).map((k) => (
+          <Toggle label={EQUIPMENT_LABEL[k]} on={own[k]} set={(v) => equipment.set((o) => ({ ...o, [k]: v }))} />
+        ))}
+      </ul>
+
       <p class="eyebrow">Alert times</p>
-      <div class="seg-row" style={{ marginTop: 0 }}>
+      <div class="seg-row" style={{ marginTop: '0px' }}>
         <button class={`seg ${isPreset(PRESETS.lastTen) ? 'on' : ''}`} onClick={() => preset(PRESETS.lastTen)}>Last 10 s</button>
         <button class={`seg ${isPreset(PRESETS.countdown5) ? 'on' : ''}`} onClick={() => preset(PRESETS.countdown5)}>Count down 5</button>
       </div>
@@ -74,7 +84,7 @@ export function Settings() {
       {vibrationSupported() && (
         <>
           <p class="eyebrow">Vibration</p>
-          <div class="seg-row" style={{ marginTop: 0 }}>
+          <div class="seg-row" style={{ marginTop: '0px' }}>
             {(['off', 'short', 'double', 'long'] as VibrateMode[]).map((m) => (
               <button class={`seg ${a.vibrate === m ? 'on' : ''}`} onClick={() => { setAlerts({ vibrate: m }); vibrate(m); }}>{m[0].toUpperCase() + m.slice(1)}</button>
             ))}

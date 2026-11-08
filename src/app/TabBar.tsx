@@ -1,5 +1,5 @@
 import { CalendarDays, Dumbbell, House, Swords, Trophy } from 'lucide-preact';
-import type { Route } from './router';
+type Route = string;
 
 const tabs = [
   { id: 'today', label: 'Today', Icon: House },
