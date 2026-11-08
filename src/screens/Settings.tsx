@@ -5,6 +5,7 @@ import { setAlerts, useAlerts } from '../data/settings';
 import { PRESETS, parseSeconds, type BeepType, type VibrateMode } from '../engine/alerts';
 import { audio, vibrate, vibrationSupported } from '../engine/audio';
 import { equipment } from '../data/library';
+import { Account } from './Account';
 import { EQUIPMENT_LABEL, type Equipment } from '../data/types';
 
 const beepTypes: { id: BeepType; label: string }[] = [
@@ -34,6 +35,9 @@ export function Settings() {
     <main class="screen">
       <Header title="Settings" />
       <p class="sub">Alert defaults for every timer.</p>
+
+      <p class="eyebrow">Account</p>
+      <Account />
 
       <p class="eyebrow">Equipment I own</p>
       <ul class="rowlist">
