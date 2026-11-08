@@ -9,7 +9,7 @@ for (const s of sizes) for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByRole('link', { name: 'Start session' })).toBeVisible();
     await page.screenshot({ path: `screenshots/today-${s.w}x${s.h}-${scheme}.png` });
     await page.getByRole('link', { name: 'Start session' }).click();
-    await expect(page.getByRole('timer')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Check sound' })).toBeVisible();
     await page.screenshot({ path: `screenshots/session-${s.w}x${s.h}-${scheme}.png` });
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
     expect(overflow).toBe(false);

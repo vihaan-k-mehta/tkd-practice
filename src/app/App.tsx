@@ -3,6 +3,7 @@ import { TabBar } from './TabBar';
 import { Today } from '../screens/Today';
 import { SessionScreen } from '../screens/Session';
 import { Placeholder } from '../screens/Placeholder';
+import { Settings } from '../screens/Settings';
 
 export function App() {
   const route = useRoute();
@@ -15,7 +16,7 @@ export function App() {
       {route === 'schedule' && <Placeholder title="Schedule" note="Nothing scheduled. The weekly plan comes in a later milestone." />}
       {route === 'quests' && <Placeholder title="Quests" note="No quests yet." />}
       {route === 'ranks' && <Placeholder title="Ranks" note="No group yet." />}
-      {route === 'settings' && <Placeholder title="Settings" note="Settings come with the alerts milestone." />}
+      {route === 'settings' && <Settings />}
       {route !== 'session' && <TabBar route={route} />}
     </>
   );

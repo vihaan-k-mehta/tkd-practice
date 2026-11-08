@@ -94,3 +94,31 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
 .opt.on { background: var(--accent-soft); color: var(--accent); }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* Milestone 3: timer, settings, phase backgrounds */
+body[data-phase='work'] { background: #DCE8FA; }
+body[data-phase='ready'] { background: #E4E6EA; }
+body[data-phase='last'] { background: #FBDAD6; }
+@media (prefers-color-scheme: dark) {
+  body[data-phase='work'] { background: #0B1830; }
+  body[data-phase='ready'] { background: #15161B; }
+  body[data-phase='last'] { background: #3A1512; }
+}
+body[data-phase='work'] .blobs, body[data-phase='ready'] .blobs, body[data-phase='last'] .blobs { display: none; }
+.block-name { font-size: 32px; font-weight: 700; line-height: 1.1; }
+.up-next { margin-top: -8px; }
+.note { margin-top: 18px; max-width: 40ch; }
+.hint { text-align: center; margin-top: 10px; }
+.banner { display: block; width: 100%; text-align: left; margin: 12px 0; padding: 14px 16px; border-radius: 16px; background: var(--belt); color: #241B35; border: 2.5px solid #241B35; font-weight: 600; }
+.field { width: 100%; min-height: 54px; padding: 0 16px; border-radius: 16px; background: var(--surface); border: var(--bw) solid var(--ink); font: inherit; font-size: 18px; color: var(--ink); }
+@media (prefers-color-scheme: dark) { .field { border: 1px solid var(--line); } }
+.switch { width: 56px; height: 34px; border-radius: 999px; background: var(--line); position: relative; flex: none; border: 2px solid transparent; }
+.switch span { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: var(--sub); transition: transform 0.15s; }
+.switch.on { background: var(--accent-soft); border-color: var(--accent); }
+.switch.on span { transform: translateX(22px); background: var(--accent); }
+.pick { display: flex; align-items: center; gap: 12px; flex: 1; min-height: 52px; text-align: left; font-size: 18px; }
+.radio { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--sub); display: inline-block; }
+.pick.on .radio { border-color: var(--accent); background: radial-gradient(var(--accent) 45%, transparent 50%); }
+.pick.on { color: var(--accent); font-weight: 600; }
+input[type='range'] { width: 100%; accent-color: var(--accent); height: 36px; }
+.run-controls { margin-top: 32px; }

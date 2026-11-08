@@ -1,4 +1,4 @@
-import { Ellipsis, Flame, Search } from 'lucide-preact';
+import { Ellipsis, Settings as Gear } from 'lucide-preact';
 import { sample } from '../data/sample';
 import { MatArt } from '../app/MatArt';
 
@@ -9,7 +9,7 @@ export function Header({ title }: { title: string }) {
         <h1>{title}</h1>
         <span class="underline" />
       </div>
-      <a class="icon-btn" href="#/settings" aria-label="Settings"><Search size={26} strokeWidth={2.25} aria-hidden="true" /></a>
+      <a class="icon-btn" href="#/settings" aria-label="Settings"><Gear size={26} strokeWidth={2.25} aria-hidden="true" /></a>
     </header>
   );
 }
