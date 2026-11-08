@@ -61,4 +61,19 @@ describe('animation library', () => {
   it('keeps every loop between 1 and 10 seconds', () => {
     for (const [id, a] of Object.entries(ANIMS)) expect(loopMs(a), id).toBeGreaterThanOrEqual(400);
   });
+  it('every animation visibly moves: some joint travels at least 12 units over the loop', () => {
+    const still: string[] = [];
+    for (const [id, a] of Object.entries(ANIMS)) {
+      let best = 0;
+      const base = joints(poseAt(a, 0), a.view);
+      const pts0 = [base.head, ...base.nearArm, ...base.farArm, ...base.nearLeg, ...base.farLeg];
+      for (let t = 0; t < loopMs(a); t += 25) {
+        const j = joints(poseAt(a, t), a.view);
+        const pts = [j.head, ...j.nearArm, ...j.farArm, ...j.nearLeg, ...j.farLeg];
+        pts.forEach((p, i) => { best = Math.max(best, Math.hypot(p[0] - pts0[i][0], p[1] - pts0[i][1])); });
+      }
+      if (best < 12) still.push(`${id}:${best.toFixed(1)}`);
+    }
+    expect(still).toEqual([]);
+  });
 });

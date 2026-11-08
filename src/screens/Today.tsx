@@ -5,7 +5,8 @@ import { MatArt } from '../app/MatArt';
 import { addDays, availFor, availLabel, weekdayOf, doneFlags, missedDates, occurrences, streak } from '../engine/schedule';
 import { fitRoutine } from '../engine/fit';
 import { go } from '../app/router';
-import { quickRoutine, getRoutine, history, lastRoutine, localDate, schedule, userRoutines } from '../data/library';
+import { beltFor, isPaused } from '../engine/quests';
+import { notice, progress, quickRoutine, getRoutine, history, lastRoutine, localDate, schedule, userRoutines } from '../data/library';
 import { TEMPLATES } from '../data/templates';
 import { routineMinutes } from '../engine/plan';
 
@@ -40,8 +41,12 @@ export function Today() {
   const tight = !!free.minutes && routineMinutes(routine) > free.minutes;
   const quick = tight ? fitRoutine(routine, free.minutes!) : undefined;
   const startQuick = () => { if (!quick) return; quickRoutine.set(() => ({ routine: quick.routine })); go(`session/${quick.routine.id}`); };
-  const sc = streak(sched, past, today);
-  const missed = missedDates(sched, past, today).filter((d) => d >= addDays(today, -7)).length;
+  const prog = progress.use();
+  const note = notice.use();
+  const belt = beltFor(prog.bestXp);
+  const pausedFn = (d: string) => isPaused(prog, d);
+  const sc = streak(sched, past, today, pausedFn);
+  const missed = missedDates(sched, past, today, pausedFn).filter((d) => d >= addDays(today, -7)).length;
   const weekAgo = Date.now() - 7 * 86400_000;
   const thisWeek = past.filter((h) => new Date(`${h.date}T00:00:00`).getTime() >= weekAgo).length;
   const latest = past[0];
@@ -50,6 +55,17 @@ export function Today() {
     <main class="screen">
       <Header title="Today" />
 
+      {note.lines.length > 0 && (
+        <div class="banner" role="status">
+          <b>While you were away</b>
+          <ul>{note.lines.map((l) => <li>{l}</li>)}</ul>
+          <button class="link-btn" onClick={() => notice.set(() => ({ lines: [] }))}>Dismiss</button>
+        </div>
+      )}
+      <a class="belt-chip" href="#/quests" aria-label={`${belt.belt.name} belt, ${prog.xp} XP. Open quests`}>
+        <span class="belt-strip" style={{ background: belt.belt.color }} />
+        <span class="grow"><b>{belt.belt.name} belt</b><span class="sub block">{prog.xp} XP{belt.next ? `, ${belt.next.xp - prog.bestXp} to ${belt.next.name}` : ''}</span></span>
+      </a>
       <article class="card">
         <p class="sub">{planned ? `Planned for ${occ[nextIdx].time}` : allDone ? 'Today is done. Extra practice' : occ.length === 0 && sched.weekly.some((l) => l.length) ? 'Rest day. Optional practice' : 'Next session'}</p>
         <h2>{routine.name}</h2>

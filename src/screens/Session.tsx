@@ -9,7 +9,9 @@ import { useAlerts } from '../data/settings';
 import { audio } from '../engine/audio';
 import { keepAwake } from '../engine/wakelock';
 import { exerciseById } from '../data/exercises';
-import { getRoutine, history, lastRoutine, localDate, uid, userRoutines, type SessionRecord } from '../data/library';
+import { equipment, getRoutine, history, lastRoutine, localDate, progress, schedule, uid, userRoutines, type SessionRecord } from '../data/library';
+import { applyEvents, awardSession, quitEvents } from '../engine/quests';
+import { blockFor } from '../data/templates';
 import { expandBlock, routineMinutes, stepSeconds, warmupReminderIndexes, READY_SEC } from '../engine/plan';
 import type { Beep } from '../engine/alerts';
 import { go } from '../app/router';
@@ -26,7 +28,17 @@ const blank = (): Result => ({ actualSec: 0, completed: false, left: 0, right: 0
 export function SessionScreen({ id }: { id?: string }) {
   const cfg = useAlerts();
   const mine = userRoutines.use();
-  const routine = useMemo(() => (id ? getRoutine(id, mine) : undefined), [id]);
+  const base = useMemo(() => (id ? getRoutine(id, mine) : undefined), [id]);
+  // A strict-mode make-up round is added once, when the session opens.
+  const makeUp = useMemo(() => progress.get().makeUp > 0, [id]);
+  const routine = useMemo(() => {
+    if (!base || !makeUp) return base;
+    const extra = equipment.get().heavyBag
+      ? blockFor('bag-roundhouse', { rounds: 1, workSec: 180, restSec: 0 })
+      : blockFor('roundhouse', { reps: 20, rounds: 1, restSec: 0 });
+    return { ...base, blocks: [...base.blocks, extra] };
+  }, [base, makeUp]);
+  const [xpGain, setXpGain] = useState(0);
   const [step, setStep] = useState<Step>({ s: 'check' });
   const [tested, setTested] = useState(false);
   const [sheet, setSheet] = useState(false);
@@ -66,6 +78,9 @@ export function SessionScreen({ id }: { id?: string }) {
     };
     history.set((h) => [rec, ...h]);
     lastRoutine.set(() => ({ id: routine.baseId ?? routine.id }));
+    const ev = awardSession(progress.get(), rec, { schedule: schedule.get(), history: history.get(), today: localDate() });
+    progress.set((pr) => applyEvents(pr, ev));
+    setXpGain(ev.reduce((a, e) => a + (e.type === 'xp' ? e.delta : 0), 0));
   }, [step.s]);
 
   if (!routine) {
@@ -129,6 +144,7 @@ export function SessionScreen({ id }: { id?: string }) {
           <p class="sub" style={{ margin: '8px 0 18px' }}>Turn your volume up and make sure silent mode is off.</p>
           <button class="btn-primary" onClick={test}><Volume2 size={22} aria-hidden="true" /> Play test beep</button>
           <p class="sub note">{n} blocks, about {routineMinutes(routine)} minutes.</p>
+          {makeUp && <p class="sub note warn">Strict mode added a make-up round at the end of this session.</p>}
           {reminders.size > 0 && <p class="sub note warn">This routine stretches before a dynamic warm-up. Do a few leg swings first.</p>}
           <button class="btn-primary" style={{ marginTop: '28px' }} disabled={!tested || n === 0} onClick={() => setStep({ s: 'ready', bi: 0 })}>Start</button>
           {!tested && <p class="sub hint">Play the test beep to continue.</p>}
@@ -156,6 +172,9 @@ export function SessionScreen({ id }: { id?: string }) {
             <div class="tile"><b>{mmss(totalActual)}</b><span>Time</span></div>
             <div class="tile"><b class="good-text">{doneCount} of {n}</b><span>Blocks done</span></div>
           </div>
+          <div class="tiles" style={{ marginTop: '14px' }}>
+            <div class="tile"><b>+{xpGain}</b><span>XP earned</span></div>
+          </div>
           <ul class="rowlist" style={{ marginTop: '18px' }}>
             {routine.blocks.map((b, i) => {
               const r = results[i] ?? blank(); const ex = exOf(i);
@@ -179,8 +198,8 @@ export function SessionScreen({ id }: { id?: string }) {
 
       {sheet && (
         <Sheet title="Quit this session?" onClose={() => setSheet(false)}>
-          <p class="sub" style={{ textAlign: 'center', margin: '4px 0 16px' }}>Unfinished blocks will not count.</p>
-          <button class="btn-primary" onClick={() => go('today')}>Quit session</button>
+          <p class="sub" style={{ textAlign: 'center', margin: '4px 0 16px' }}>Unfinished blocks will not count.{progress.get().mode === 'strict' ? ' In strict mode, quitting early also forfeits today\'s daily quest.' : ''}</p>
+          <button class="btn-primary" onClick={() => { progress.set((pr) => applyEvents(pr, quitEvents(pr, localDate(), { schedule: schedule.get(), history: history.get(), today: localDate() }))); go('today'); }}>Quit session</button>
           <button class="discard" style={{ color: 'var(--ink)', marginTop: '12px' }} onClick={() => setSheet(false)}>Keep going</button>
         </Sheet>
       )}

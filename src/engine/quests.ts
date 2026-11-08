@@ -42,7 +42,7 @@ export const XP = { perBlock: 4, blockCap: 40, fullBonus: 10, daily: 20, weekly:
 
 export const freshProgress = (today: string): Progress => ({
   xp: 0, bestXp: 0, mode: 'light', chosen: false, processedThrough: '', passUsed: [], bwDrops: 0, makeUp: 0,
-  forfeited: [], awarded: [], weekFailed: [], bwLocked: [], goals: [], log: [], ...(today ? {} : {}),
+  forfeited: [], awarded: [], weekFailed: [], bwLocked: [], goals: [], log: [],
 });
 
 const weekStart = (d: string) => addDays(d, -weekdayOf(d));
