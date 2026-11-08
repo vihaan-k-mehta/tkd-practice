@@ -212,3 +212,13 @@ body[data-phase='rest'] .blobs { display: none; }
 .cal-dots { display: flex; justify-content: center; gap: 14px; margin: 12px 0 6px; }
 .cal-dots span { width: 44px; height: 44px; border-radius: 50%; border: 2.5px solid var(--ink); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
 .cal-dots span.on { background: var(--accent); color: var(--on-accent); }
+
+/* Guided training */
+.train-steps { display: flex; justify-content: center; gap: 8px; margin: 14px 0; }
+.train-steps i { width: 26px; height: 8px; border-radius: 4px; background: var(--line); }
+.train-steps i.done { background: var(--accent); }
+.train-steps i.now { background: var(--ink); }
+.report-row { align-items: flex-start; }
+.mark { width: 30px; height: 30px; border-radius: 50%; flex: none; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--ink); }
+.mark.ok { background: var(--accent); color: var(--on-accent); }
+.warn-text { color: var(--accent); font-weight: 600; }

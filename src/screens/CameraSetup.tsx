@@ -167,7 +167,8 @@ export function CameraSetup({ v, onStart, onHonor }: { v: Verifier; onStart: () 
         </>
       )}
 
-      <button class="link-btn" style={{ margin: '18px auto 0' }} onClick={onHonor}>Continue without the camera (half XP, not on leaderboards)</button>
+      <a class="link-btn" href="#/train" style={{ margin: '14px auto 0' }}>Tracking not working well? Run the guided training</a>
+      <button class="link-btn" style={{ margin: '8px auto 0' }} onClick={onHonor}>Continue without the camera (half XP, not on leaderboards)</button>
     </>
   );
 }

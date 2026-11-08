@@ -27,13 +27,17 @@ export const progress = createStore<Progress>('tkd.progress.v1', freshProgress(l
 /** What the last app-open judged, shown once on Today. */
 export const notice = createStore<{ lines: string[] }>('tkd.notice.v1', { lines: [] }, (v) => ({ lines: Array.isArray((v as { lines?: unknown })?.lines) ? ((v as { lines: unknown[] }).lines).filter((x): x is string => typeof x === 'string').slice(0, 10).map((x) => x.slice(0, 140)) : [] }));
 
-export interface CameraSettings { use: boolean; honor: boolean; skeleton: boolean; kickHeight?: number; sensitivity: 'relaxed' | 'normal' | 'strict'; quality: 'full' | 'lite'; motionThreshold?: number }
+export interface CameraSettings { use: boolean; honor: boolean; skeleton: boolean; kickHeight?: number; sensitivity: 'relaxed' | 'normal' | 'strict'; quality: 'full' | 'lite'; motionThreshold?: number; kickCfg?: { kickHeight?: number; extendAngle?: number; chamberAngle?: number; returnAngle?: number } }
 export const camera = createStore<CameraSettings>('tkd.camera.v1', { use: true, honor: false, skeleton: false, sensitivity: 'relaxed', quality: 'full' }, (v, d) => {
   const o = (v ?? {}) as Record<string, unknown>;
   const kh = typeof o.kickHeight === 'number' && Number.isFinite(o.kickHeight) ? Math.max(-1, Math.min(1, o.kickHeight)) : undefined;
   const mt = typeof o.motionThreshold === 'number' && Number.isFinite(o.motionThreshold) ? Math.max(0.02, Math.min(0.5, o.motionThreshold)) : undefined;
   const sens = o.sensitivity === 'normal' || o.sensitivity === 'strict' ? o.sensitivity : d.sensitivity;
-  return { use: o.use !== false, honor: o.honor === true, skeleton: o.skeleton === true, kickHeight: kh, sensitivity: sens, quality: o.quality === 'lite' ? 'lite' : 'full', motionThreshold: mt };
+  const kc = (o.kickCfg ?? {}) as Record<string, unknown>;
+  const num = (v: unknown, lo: number, hi: number) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : undefined);
+  const kickCfg = { kickHeight: num(kc.kickHeight, -1, 1), extendAngle: num(kc.extendAngle, 100, 175), chamberAngle: num(kc.chamberAngle, 40, 140), returnAngle: num(kc.returnAngle, 60, 170) };
+  const hasKick = Object.values(kickCfg).some((x) => x !== undefined);
+  return { kickCfg: hasKick ? kickCfg : undefined, use: o.use !== false, honor: o.honor === true, skeleton: o.skeleton === true, kickHeight: kh, sensitivity: sens, quality: o.quality === 'lite' ? 'lite' : 'full', motionThreshold: mt };
 });
 
 export const uid =() => Math.random().toString(36).slice(2, 10);

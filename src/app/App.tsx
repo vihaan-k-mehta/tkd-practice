@@ -4,6 +4,7 @@ import { history, localDate, notice, progress, schedule } from '../data/library'
 import { catchUp } from '../engine/quests';
 import { DebugPose } from '../screens/DebugPose';
 import { handleEmailLanding } from '../data/auth';
+import { Train } from '../screens/Train';
 import { Quests } from '../screens/Quests';
 import { TabBar } from './TabBar';
 import { Today } from '../screens/Today';
@@ -49,7 +50,8 @@ export function App() {
       {name === 'settings' && <Settings />}
       {name === 'animations' && <AnimSheet />}
       {name === 'debug-pose' && <DebugPose />}
-      {name !== 'session' && <TabBar route={tab} />}
+      {name === 'train' && <Train />}
+      {name !== 'session' && name !== 'train' && <TabBar route={tab} />}
     </>
   );
 }

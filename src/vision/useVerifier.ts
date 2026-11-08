@@ -55,7 +55,8 @@ export function useVerifier() {
     try {
       const cs = camera.get();
       const prof = profileFor(cs.sensitivity, cs.motionThreshold);
-      tracker.current = new Tracker(cs.kickHeight === undefined ? undefined : { ...DEFAULT_REP_CONFIG, kickHeight: cs.kickHeight }, prof);
+      const kick = { ...DEFAULT_REP_CONFIG, ...(cs.kickHeight === undefined ? {} : { kickHeight: cs.kickHeight }), ...Object.fromEntries(Object.entries(cs.kickCfg ?? {}).filter(([, x]) => x !== undefined)) };
+      tracker.current = new Tracker(kick, prof);
       const [s, pose] = await Promise.all([
         openCamera(),
         loadPose(cs.quality).catch(() => { throw Object.assign(new Error('model'), { kind: 'model' as CamError }); }),

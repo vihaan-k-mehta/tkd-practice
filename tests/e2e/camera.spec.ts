@@ -79,3 +79,34 @@ test('sensitivity and tracking quality are choices that stick, relaxed and accur
   await expect(page.getByRole('radio', { name: 'Strict' })).toHaveAttribute('aria-checked', 'true');
   await expect(page.getByRole('radio', { name: 'Fast' })).toHaveAttribute('aria-checked', 'true');
 });
+
+test('guided training runs the whole script and reports back, and learns nothing when nobody was seen', async ({ page }) => {
+  test.setTimeout(90000);
+  const problems: string[] = [];
+  page.on('pageerror', (e) => problems.push(String(e)));
+  await page.goto('./#/train?speed=4&skipwait=1');
+  await expect(page.getByText(/follow the voice and the beeps/)).toBeVisible();
+  await page.screenshot({ path: 'screenshots/m7-train-intro.png', fullPage: true });
+  await page.getByRole('button', { name: 'Start training' }).click();
+  await expect(page.getByText('Step 1 of 7')).toBeVisible({ timeout: 60000 });
+  await page.screenshot({ path: 'screenshots/m7-train-run.png', fullPage: true });
+  await expect(page.getByText(/Trained/)).toBeVisible({ timeout: 60000 });
+  await page.screenshot({ path: 'screenshots/m7-train-report.png', fullPage: true });
+  await expect(page.getByText('Leaving the picture')).toBeVisible();
+  await expect(page.getByText('Left kicks')).toBeVisible();
+  await expect(page.getByText('What I saved')).toBeVisible();
+  // Nobody was in view, so nothing about movement or kicks was learned.
+  const s = await page.evaluate(() => JSON.parse(localStorage.getItem('tkd.camera.v1') || '{}'));
+  expect(s.motionThreshold).toBeUndefined();
+  expect(s.kickCfg).toBeUndefined();
+  await page.getByRole('button', { name: 'Undo these changes' }).click();
+  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+  expect(problems).toEqual([]);
+});
+
+test('settings and the camera setup both link to the guided training', async ({ page }) => {
+  await page.goto('./#/settings');
+  await expect(page.getByRole('link', { name: /Guided training/ })).toBeVisible();
+  await page.getByRole('link', { name: /Guided training/ }).click();
+  await expect(page.getByRole('heading', { name: 'Guided training' })).toBeVisible();
+});

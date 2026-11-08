@@ -46,6 +46,8 @@ export function Settings() {
         <Toggle label="Honor mode" on={cam.honor} set={(v) => camera.set((c) => ({ ...c, honor: v }))} hint="Skip the camera for bad light or a broken camera. Sessions are marked unverified, earn half XP and stay off leaderboards." />
         <Toggle label="Show skeleton overlay" on={cam.skeleton} set={(v) => camera.set((c) => ({ ...c, skeleton: v }))} hint="For debugging only." />
       </ul>
+      <a class="btn-primary" href="#/train" style={{ textDecoration: 'none', marginTop: '10px' }}>Guided training (about 2 minutes)</a>
+      <p class="sub note">Follow a voice through a few exercises. It tunes the camera to you and reports back.</p>
       <p class="eyebrow">How strict is the camera</p>
       <div class="seg-row" role="radiogroup" aria-label="Camera sensitivity" style={{ marginTop: '0px' }}>
         {(['relaxed', 'normal', 'strict'] as const).map((s) => (
