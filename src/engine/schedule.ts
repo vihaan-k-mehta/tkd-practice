@@ -4,6 +4,8 @@ import type { SessionRecord } from '../data/library';
 export interface Slot { id: string; routineId: string; time: string }
 export interface Extra { id: string; date: string; routineId: string; time: string }
 export interface Move { slotId: string; from: string; to: string }
+/** When someone is free on a weekday. All parts optional. */
+export interface Avail { from?: string; until?: string; minutes?: number }
 export interface Schedule {
   /** First day the plan applies to, so earlier days are never counted as missed. */
   since: string;
@@ -11,6 +13,8 @@ export interface Schedule {
   extras: Extra[];
   moves: Move[];
   restPass: boolean;
+  /** Free time per weekday, Monday = 0. */
+  avail?: Avail[];
 }
 export interface Occurrence { slotId: string; routineId: string; time: string; date: string; extra: boolean }
 export type DayState = 'rest' | 'planned' | 'done' | 'partial' | 'missed';
@@ -24,7 +28,7 @@ export const addDays = (d: string, n: number) => { const x = parse(d); x.setDate
 const weekStart = (d: string) => addDays(d, -weekdayOf(d));
 
 export function emptySchedule(today: string): Schedule {
-  return { since: today, weekly: [[], [], [], [], [], [], []], extras: [], moves: [], restPass: false };
+  return { since: today, weekly: [[], [], [], [], [], [], []], extras: [], moves: [], restPass: false, avail: [{}, {}, {}, {}, {}, {}, {}] };
 }
 
 export function occurrences(s: Schedule, date: string): Occurrence[] {
@@ -61,22 +65,22 @@ export function dayState(s: Schedule, history: SessionRecord[], date: string, to
 }
 
 /** Past dates, with sessions planned, not fully completed. These feed the consequence engine. */
-export function missedDates(s: Schedule, history: SessionRecord[], today: string): string[] {
+export function missedDates(s: Schedule, history: SessionRecord[], today: string, paused?: (date: string) => boolean): string[] {
   const out: string[] = [];
   for (let d = s.since; d < today; d = addDays(d, 1)) {
     const st = dayState(s, history, d, today);
-    if (st === 'missed' || st === 'partial') out.push(d);
+    if ((st === 'missed' || st === 'partial') && !paused?.(d)) out.push(d);
   }
   return out;
 }
 
 /** Consecutive scheduled days completed. Rest days are skipped. One rest pass per week forgives one miss. */
-export function streak(s: Schedule, history: SessionRecord[], today: string): number {
+export function streak(s: Schedule, history: SessionRecord[], today: string, paused?: (date: string) => boolean): number {
   let count = 0;
   const passUsed = new Set<string>();
   for (let d = today; d >= s.since; d = addDays(d, -1)) {
     const st = dayState(s, history, d, today);
-    if (st === 'rest') continue;
+    if (st === 'rest' || paused?.(d)) continue;
     if (st === 'done') { count++; continue; }
     if (d === today && (st === 'planned' || st === 'partial')) continue;
     const wk = weekStart(d);
@@ -115,3 +119,20 @@ export function toIcs(s: Schedule, routineName: (id: string) => string, from: st
   lines.push('END:VCALENDAR');
   return lines.join('\r\n') + '\r\n';
 }
+
+export const availFor = (s: Schedule, weekday: number): Avail => s.avail?.[weekday] ?? {};
+
+const clock = (hhmm: string): string => {
+  const [h, m] = hhmm.split(':').map(Number);
+  const hour = h % 12 === 0 ? 12 : h % 12;
+  return `${hour}${m ? `:${String(m).padStart(2, '0')}` : ''} ${h < 12 ? 'am' : 'pm'}`;
+};
+export function availLabel(a: Avail): string {
+  const parts: string[] = [];
+  if (a.from && a.until) parts.push(`${clock(a.from)} to ${clock(a.until)}`);
+  else if (a.from) parts.push(`After ${clock(a.from)}`);
+  else if (a.until) parts.push(`Before ${clock(a.until)}`);
+  if (a.minutes) parts.push(`${a.minutes} min`);
+  return parts.join(', ') || 'Free all day';
+}
+export const timeInWindow = (time: string, a: Avail): boolean => (!a.from || time >= a.from) && (!a.until || time <= a.until);

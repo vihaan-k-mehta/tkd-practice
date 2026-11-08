@@ -2,8 +2,10 @@ import { Settings as Gear } from 'lucide-preact';
 import { useState } from 'preact/hooks';
 import { TimeSheet } from '../app/TimeSheet';
 import { MatArt } from '../app/MatArt';
-import { addDays, doneFlags, missedDates, occurrences, streak } from '../engine/schedule';
-import { getRoutine, history, lastRoutine, localDate, schedule, userRoutines } from '../data/library';
+import { addDays, availFor, availLabel, weekdayOf, doneFlags, missedDates, occurrences, streak } from '../engine/schedule';
+import { fitRoutine } from '../engine/fit';
+import { go } from '../app/router';
+import { quickRoutine, getRoutine, history, lastRoutine, localDate, schedule, userRoutines } from '../data/library';
 import { TEMPLATES } from '../data/templates';
 import { routineMinutes } from '../engine/plan';
 
@@ -34,6 +36,10 @@ export function Today() {
   const planned = nextIdx >= 0 ? getRoutine(occ[nextIdx].routineId, mine) : undefined;
   const allDone = occ.length > 0 && nextIdx < 0;
   const routine = planned ?? getRoutine(last.id, mine) ?? TEMPLATES[0];
+  const free = availFor(sched, weekdayOf(today));
+  const tight = !!free.minutes && routineMinutes(routine) > free.minutes;
+  const quick = tight ? fitRoutine(routine, free.minutes!) : undefined;
+  const startQuick = () => { if (!quick) return; quickRoutine.set(() => ({ routine: quick.routine })); go(`session/${quick.routine.id}`); };
   const sc = streak(sched, past, today);
   const missed = missedDates(sched, past, today).filter((d) => d >= addDays(today, -7)).length;
   const weekAgo = Date.now() - 7 * 86400_000;
@@ -49,10 +55,12 @@ export function Today() {
         <h2>{routine.name}</h2>
         <p class="sub">{routineMinutes(routine)} minutes, {routine.blocks.length} blocks</p>
         <div class="media"><MatArt /></div>
-        <a class="btn-primary" href={`#/session/${routine.id}`} style={{ textDecoration: 'none' }}>Start session</a>
+        {(free.from || free.until || free.minutes) && <p class="sub" style={{ marginTop: '10px' }}>Today you are free: {availLabel(free)}.</p>}
+        {quick && <button class="btn-primary" style={{ marginTop: '12px' }} onClick={startQuick}>Start the {Math.max(1, Math.round(quick.seconds / 60))} min version</button>}
+        <a class={quick ? 'link-btn' : 'btn-primary'} href={`#/session/${routine.id}`} style={{ textDecoration: 'none', margin: quick ? '8px auto 0' : undefined }}>{quick ? `Do the full ${routineMinutes(routine)} min anyway` : 'Start session'}</a>
         <button class="link-btn" style={{ margin: '8px auto 0' }} onClick={() => setTimeOpen(true)}>Short on time?</button>
         <a class="link-btn" href="#/routines" style={{ margin: '8px auto 0' }}>Choose a different routine</a>
-        {timeOpen && <TimeSheet routine={routine} onClose={() => setTimeOpen(false)} />}
+        {timeOpen && <TimeSheet routine={routine} initial={free.minutes} onClose={() => setTimeOpen(false)} />}
       </article>
 
       <p class="eyebrow">Recent</p>

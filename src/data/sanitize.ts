@@ -1,6 +1,7 @@
 import { exerciseById } from './exercises';
 import type { Block, Routine, Sides, Target } from './types';
 import type { Schedule, Slot } from '../engine/schedule';
+import type { Mode, Progress } from '../engine/quests';
 
 /** Saved data can be edited by hand or by another script on the same origin, so check it on load. */
 const num = (v: unknown, min: number, max: number): number | undefined =>
@@ -57,5 +58,41 @@ export function cleanSchedule(v: unknown, fallback: Schedule): Schedule {
     return typeof s.slotId === 'string' && ID.test(s.slotId) && typeof s.from === 'string' && DATE.test(s.from) && typeof s.to === 'string' && (s.to === '' || DATE.test(s.to))
       ? [{ slotId: s.slotId, from: s.from, to: s.to }] : [];
   });
-  return { since: typeof o.since === 'string' && DATE.test(o.since) ? o.since : fallback.since, weekly, extras, moves, restPass: o.restPass === true };
+  const avail = Array.from({ length: 7 }, (_, i) => {
+    const a = ((Array.isArray(o.avail) ? o.avail[i] : undefined) ?? {}) as Record<string, unknown>;
+    const out: { from?: string; until?: string; minutes?: number } = {};
+    if (typeof a.from === 'string' && TIME.test(a.from)) out.from = a.from;
+    if (typeof a.until === 'string' && TIME.test(a.until)) out.until = a.until;
+    const m = num(a.minutes, 1, 480); if (m !== undefined) out.minutes = m;
+    return out;
+  });
+  return { since: typeof o.since === 'string' && DATE.test(o.since) ? o.since : fallback.since, weekly, extras, moves, restPass: o.restPass === true, avail };
+}
+
+const strs = (v: unknown, max: number, re: RegExp): string[] => (Array.isArray(v) ? v : []).filter((x): x is string => typeof x === 'string' && re.test(x)).slice(-max);
+export function cleanProgress(v: unknown, fallback: Progress): Progress {
+  if (!v || typeof v !== 'object') return fallback;
+  const o = v as Record<string, unknown>;
+  const mode = (m: unknown): Mode | undefined => (m === 'off' || m === 'light' || m === 'strict' ? m : undefined);
+  const pend = (o.pending ?? {}) as Record<string, unknown>;
+  const xp = num(o.xp, 0, 1_000_000) ?? 0;
+  return {
+    ...fallback, xp, bestXp: Math.max(xp, num(o.bestXp, 0, 1_000_000) ?? 0),
+    mode: mode(o.mode) ?? fallback.mode, chosen: o.chosen === true,
+    pending: mode(pend.mode) && typeof pend.from === 'string' && DATE.test(pend.from) ? { mode: pend.mode as Mode, from: pend.from } : undefined,
+    processedThrough: typeof o.processedThrough === 'string' && (o.processedThrough === '' || DATE.test(o.processedThrough)) ? o.processedThrough : '',
+    passUsed: strs(o.passUsed, 200, DATE), weekFailed: strs(o.weekFailed, 200, DATE), bwLocked: strs(o.bwLocked, 200, DATE), forfeited: strs(o.forfeited, 800, DATE),
+    awarded: strs(o.awarded, 2000, /^[A-Za-z0-9:_-]{1,90}$/),
+    injuryUntil: typeof o.injuryUntil === 'string' && DATE.test(o.injuryUntil) ? o.injuryUntil : undefined,
+    bwDrops: num(o.bwDrops, 0, 100) ?? 0, makeUp: num(o.makeUp, 0, 3) ?? 0,
+    goals: (Array.isArray(o.goals) ? o.goals : []).slice(0, 50).flatMap((g) => {
+      const x = (g ?? {}) as Record<string, unknown>;
+      const title = text(x.title, 60);
+      return typeof x.id === 'string' && ID.test(x.id) && title ? [{ id: x.id, title, done: x.done === true }] : [];
+    }),
+    log: (Array.isArray(o.log) ? o.log : []).slice(0, 40).flatMap((l) => {
+      const x = (l ?? {}) as Record<string, unknown>;
+      return typeof x.date === 'string' && DATE.test(x.date) ? [{ date: x.date, text: text(x.text, 120) }] : [];
+    }),
+  };
 }

@@ -110,3 +110,29 @@ describe('toIcs', () => {
     expect(ics.split('\r\n').length).toBeGreaterThan(10);
   });
 });
+
+import { availFor, availLabel, timeInWindow, type Avail } from '../src/engine/schedule';
+
+describe('availability', () => {
+  it('describes a window in plain words', () => {
+    expect(availLabel({ from: '17:00' })).toBe('After 5 pm');
+    expect(availLabel({ until: '08:00' })).toBe('Before 8 am');
+    expect(availLabel({ from: '17:30', until: '20:00' })).toBe('5:30 pm to 8 pm');
+    expect(availLabel({ from: '17:00', minutes: 30 })).toBe('After 5 pm, 30 min');
+    expect(availLabel({ minutes: 20 })).toBe('20 min');
+    expect(availLabel({})).toBe('Free all day');
+    expect(availLabel({ from: '00:00' })).toBe('After 12 am');
+    expect(availLabel({ from: '12:00' })).toBe('After 12 pm');
+  });
+  it('checks whether a time fits the window', () => {
+    const a: Avail = { from: '17:00', until: '20:00' };
+    expect(timeInWindow('18:30', a)).toBe(true);
+    expect(timeInWindow('16:59', a)).toBe(false);
+    expect(timeInWindow('20:01', a)).toBe(false);
+    expect(timeInWindow('09:00', {})).toBe(true);
+  });
+  it('reads a weekday safely when the plan has no availability yet', () => {
+    expect(availFor(base, 0)).toEqual({});
+    expect(availFor({ ...base, avail: [{ minutes: 15 }, {}, {}, {}, {}, {}, {}] }, 0)).toEqual({ minutes: 15 });
+  });
+});

@@ -1,5 +1,6 @@
 import { createStore } from './store';
-import { cleanRoutines, cleanSchedule } from './sanitize';
+import { cleanProgress, cleanRoutines, cleanSchedule } from './sanitize';
+import { freshProgress, type Progress } from '../engine/quests';
 import { TEMPLATES } from './templates';
 import type { Equipment, Routine } from './types';
 import { emptySchedule, type Schedule } from '../engine/schedule';
@@ -19,6 +20,10 @@ export function localDate(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 export const schedule = createStore<Schedule>('tkd.schedule.v1', emptySchedule(localDate()), (v, d) => cleanSchedule(v, d));
+
+export const progress = createStore<Progress>('tkd.progress.v1', freshProgress(localDate()), (v, d) => cleanProgress(v, d));
+/** What the last app-open judged, shown once on Today. */
+export const notice = createStore<{ lines: string[] }>('tkd.notice.v1', { lines: [] }, (v) => ({ lines: Array.isArray((v as { lines?: unknown })?.lines) ? ((v as { lines: unknown[] }).lines).filter((x): x is string => typeof x === 'string').slice(0, 10).map((x) => x.slice(0, 140)) : [] }));
 
 export const uid =() => Math.random().toString(36).slice(2, 10);
 /** The most recent shortened routine, so a session can run it without cluttering the saved list. */

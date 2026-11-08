@@ -9,9 +9,9 @@ import { routineMinutes } from '../engine/plan';
 const CHOICES = [5, 10, 15, 20, 30, 45];
 
 /** Asks how many minutes someone has and starts a version of the routine that fits. */
-export function TimeSheet({ routine, onClose }: { routine: Routine; onClose: () => void }) {
+export function TimeSheet({ routine, initial, onClose }: { routine: Routine; initial?: number; onClose: () => void }) {
   const full = routineMinutes(routine.baseId ? { ...routine, id: routine.id } : routine);
-  const [minutes, setMinutes] = useState(Math.min(10, Math.max(5, full)));
+  const [minutes, setMinutes] = useState(initial ?? Math.min(10, Math.max(5, full)));
   const fit = useMemo(() => fitRoutine(routine, minutes), [routine, minutes]);
   const start = () => {
     if (fit.changed) quickRoutine.set(() => ({ routine: fit.routine }));

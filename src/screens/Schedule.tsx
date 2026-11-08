@@ -2,9 +2,12 @@ import { useState } from 'preact/hooks';
 import { CalendarPlus, ChevronLeft, ChevronRight, Flame, Plus, Trash2 } from 'lucide-preact';
 import { Header } from './Today';
 import { Sheet } from '../app/Sheet';
+import { routineMinutes } from '../engine/plan';
+import { Stepper } from '../app/Sheet';
+import type { Avail } from '../engine/schedule';
 import { getRoutine, history, localDate, schedule, uid, userRoutines } from '../data/library';
 import { TEMPLATES } from '../data/templates';
-import { dayState, doneFlags, monthGrid, occurrences, streak, toIcs, type DayState } from '../engine/schedule';
+import { weekdayOf, availFor, availLabel, timeInWindow, dayState, doneFlags, monthGrid, occurrences, streak, toIcs, type DayState } from '../engine/schedule';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -21,15 +24,21 @@ function RoutineSelect({ value, onChange, label }: { value: string; onChange: (v
   );
 }
 
-function AddSlot({ title, onSave, onClose }: { title: string; onSave: (routineId: string, time: string) => void; onClose: () => void }) {
+function AddSlot({ title, avail = {}, onSave, onClose }: { title: string; avail?: Avail; onSave: (routineId: string, time: string) => void; onClose: () => void }) {
   const [routineId, setRoutineId] = useState(TEMPLATES[0].id);
-  const [time, setTime] = useState('18:00');
+  const [time, setTime] = useState(avail.from ?? '18:00');
+  const mine = userRoutines.use();
+  const r = getRoutine(routineId, mine);
+  const mins = r ? routineMinutes(r) : 0;
   return (
     <Sheet title={title} onClose={onClose}>
       <label class="eyebrow" for="slot-routine">Routine</label>
       <RoutineSelect value={routineId} onChange={setRoutineId} label="Routine" />
       <label class="eyebrow" for="slot-time">Time</label>
       <input id="slot-time" class="field" type="time" value={time} onInput={(e) => setTime((e.target as HTMLInputElement).value || '18:00')} />
+      <p class="sub note">You are free: {availLabel(avail)}.</p>
+      {!timeInWindow(time, avail) && <p class="sub note warn" role="status">That time is outside the hours you said you are free.</p>}
+      {avail.minutes && mins > avail.minutes && <p class="sub note warn" role="status">This takes about {mins} min and you have {avail.minutes}. It will be offered as a shortened version.</p>}
       <button class="btn-primary" style={{ marginTop: '20px' }} onClick={() => { onSave(routineId, time); onClose(); }}>Add session</button>
     </Sheet>
   );
@@ -55,7 +64,7 @@ function DaySheet({ date, today, onClose }: { date: string; today: string; onClo
   };
   return (
     <Sheet title={nice} onClose={onClose}>
-      <p class="sub" style={{ marginBottom: '8px' }}>{date === today ? 'Today, ' : ''}{STATE_LABEL[state]}</p>
+      <p class="sub" style={{ marginBottom: '8px' }}>{date === today ? 'Today, ' : ''}{STATE_LABEL[state]}. Free: {availLabel(availFor(s, weekdayOf(date)))}.</p>
       {occ.length === 0 && <p class="empty">Nothing planned. This is a rest day.</p>}
       <ul class="rowlist">
         {occ.map((o, i) => (
@@ -78,8 +87,35 @@ function DaySheet({ date, today, onClose }: { date: string; today: string; onClo
         <button class="discard" style={{ color: 'var(--ink)', marginTop: '12px' }} onClick={() => { const i = flags.findIndex((f) => !f); if (i >= 0) remove(occ[i]); onClose(); }}>Remove the first unfinished session</button>
       )}
       <button class="btn-primary" style={{ marginTop: '16px' }} onClick={() => setAdding(true)}><Plus size={22} aria-hidden="true" /> Add a one-off session</button>
-      {adding && <AddSlot title="One-off session" onClose={() => setAdding(false)}
+      {adding && <AddSlot title="One-off session" avail={availFor(s, weekdayOf(date))} onClose={() => setAdding(false)}
         onSave={(routineId, time) => schedule.set((x) => ({ ...x, extras: [...x.extras, { id: uid(), date, routineId, time }] }))} />}
+    </Sheet>
+  );
+}
+
+function AvailSheet({ wd, onClose }: { wd: number; onClose: () => void }) {
+  const s = schedule.use();
+  const cur = availFor(s, wd);
+  const [from, setFrom] = useState(cur.from ?? '');
+  const [until, setUntil] = useState(cur.until ?? '');
+  const [minutes, setMinutes] = useState(cur.minutes ?? 0);
+  const save = (a: Avail) => { schedule.set((x) => ({ ...x, avail: Array.from({ length: 7 }, (_, i) => (i === wd ? a : availFor(x, i))) })); onClose(); };
+  const draft: Avail = { ...(from ? { from } : {}), ...(until ? { until } : {}), ...(minutes ? { minutes } : {}) };
+  return (
+    <Sheet title={`${WEEKDAYS[wd]}: when are you free?`} onClose={onClose}>
+      <div class="seg-row" style={{ marginTop: '0px' }}>
+        <button class="seg" onClick={() => { setFrom('17:00'); setUntil(''); }}>After 5 pm</button>
+        <button class="seg" onClick={() => { setFrom(''); setUntil('08:00'); }}>Before 8 am</button>
+        <button class="seg" onClick={() => { setFrom(''); setUntil(''); setMinutes(0); }}>All day</button>
+      </div>
+      <label class="eyebrow" for="av-from">Free from (optional)</label>
+      <input id="av-from" class="field" type="time" value={from} onInput={(e) => setFrom((e.target as HTMLInputElement).value)} />
+      <label class="eyebrow" for="av-until">Free until (optional)</label>
+      <input id="av-until" class="field" type="time" value={until} onInput={(e) => setUntil((e.target as HTMLInputElement).value)} />
+      <p class="eyebrow">How many minutes can you train? 0 means no limit</p>
+      <Stepper label="Minutes" value={minutes} set={setMinutes} min={0} max={240} step={5} />
+      <p class="sub note" role="status">{availLabel(draft)}</p>
+      <button class="btn-primary" style={{ marginTop: '16px' }} onClick={() => save(draft)}>Save</button>
     </Sheet>
   );
 }
@@ -88,6 +124,7 @@ function WeeklyPlan() {
   const s = schedule.use();
   const mine = userRoutines.use();
   const [adding, setAdding] = useState<number | null>(null);
+  const [availOpen, setAvailOpen] = useState<number | null>(null);
   const removeSlot = (wd: number, id: string) => schedule.set((x) => ({ ...x, weekly: x.weekly.map((l, i) => (i === wd ? l.filter((z) => z.id !== id) : l)) }));
   return (
     <>
@@ -95,6 +132,9 @@ function WeeklyPlan() {
       {WEEKDAYS.map((name, wd) => (
         <section>
           <p class="eyebrow">{name}</p>
+          <button class="row-btn" onClick={() => setAvailOpen(wd)} aria-label={`${name} availability: ${availLabel(availFor(s, wd))}`}>
+            <span class="grow"><span class="sub">When you are free</span> <b>{availLabel(availFor(s, wd))}</b></span><ChevronRight size={20} aria-hidden="true" />
+          </button>
           <ul class="rowlist">
             {s.weekly[wd].length === 0 && <li><span class="sub">Rest day</span></li>}
             {s.weekly[wd].map((z) => (
@@ -107,7 +147,8 @@ function WeeklyPlan() {
           <button class="link-btn" onClick={() => setAdding(wd)} aria-label={`Add a session on ${name}`}><Plus size={18} aria-hidden="true" /> Add session</button>
         </section>
       ))}
-      {adding !== null && <AddSlot title={`${WEEKDAYS[adding]} session`} onClose={() => setAdding(null)}
+      {availOpen !== null && <AvailSheet wd={availOpen} onClose={() => setAvailOpen(null)} />}
+      {adding !== null && <AddSlot title={`${WEEKDAYS[adding]} session`} avail={availFor(s, adding)} onClose={() => setAdding(null)}
         onSave={(routineId, time) => schedule.set((x) => ({ ...x, weekly: x.weekly.map((l, i) => (i === adding ? [...l, { id: uid(), routineId, time }] : l)) }))} />}
     </>
   );
