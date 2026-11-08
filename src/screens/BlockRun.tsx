@@ -4,6 +4,7 @@ import { BlockClock } from '../engine/timer';
 import { dueBeeps, segmentAt, segmentTimeline, type AlertConfig, type Beep } from '../engine/alerts';
 import { audio, vibrate } from '../engine/audio';
 import type { Verifier } from '../vision/useVerifier';
+import { useLegWatch, type BwTotals } from '../vision/useLegWatch';
 
 const LOOKAHEAD = 0.15; // seconds scheduled ahead on the audio clock
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -27,9 +28,11 @@ export interface RunProps {
   onFail?: (elapsedSec: number, verifiedSec: number) => void;
   /** The camera stopped (for example the app went to the background). The timer holds until it is back. */
   cameraDown?: boolean;
+  /** The foot must stay up on this leg. A fast beep means it touched down. */
+  watchLeg?: 'left' | 'right'; hold?: boolean; totals?: { current: BwTotals };
 }
 
-export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, timeline, phaseChange, next, skipLabel, onDone, onSkip, verifier, verifyMode, onFail, cameraDown }: RunProps) {
+export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, timeline, phaseChange, next, skipLabel, onDone, onSkip, verifier, verifyMode, onFail, cameraDown, watchLeg, hold, totals }: RunProps) {
   const clock = useRef(new BlockClock(segments.reduce((a, b) => a + b, 0))).current;
   const [segs, setSegs] = useState(segments);
   const [paused, setPaused] = useState(false);
@@ -85,6 +88,7 @@ export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, time
     document.body.dataset.phase = kind === 'ready' ? 'ready' : kind === 'rest' ? 'rest' : last ? 'last' : 'work';
   }, [view.remaining, view.index, kind, segs.length]);
 
+  const footDown = useLegWatch(verifier, watchLeg, totals, hold);
   const toggle = () => { if (paused) { if (!held) clock.resume(); } else clock.pause(); setPaused(!paused); };
   const add10 = () => { clock.addSeconds(10); setSegs((s) => s.map((d, i) => (i === s.length - 1 ? d + 10 : d))); };
   const eyebrow = kind === 'ready' ? 'Get ready' : sideLabels?.[view.index] ?? (kind === 'rest' ? 'Rest' : 'Work');
@@ -96,6 +100,7 @@ export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, time
       <p class="clock" role="timer" aria-label={`${view.remaining} seconds remaining`}>{kind === 'ready' ? view.remaining : fmt(view.remaining)}</p>
       {kind !== 'ready' && next && <p class="sub up-next">Next: {next}</p>}
 
+      {footDown && <p class="banner gate foot" role="alert">Foot up! Lift it now or you lose XP.</p>}
       {cameraDown && verifier && <button class="banner gate" onClick={() => void verifier.start()}>The camera turned off, so your time is paused. Tap to turn it back on.</button>}
       {held && !cameraDown && gate && gate.message && <p class="banner gate" role="alert">{gate.message}</p>}
       {view.suspended && <button class="banner" onClick={() => audio.unlock()}>Tap to enable sound</button>}

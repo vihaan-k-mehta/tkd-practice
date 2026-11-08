@@ -124,9 +124,13 @@ export function RoutineBuilder({ id }: { id?: string }) {
               <Stepper label="Rest" unit="s" value={editing.target.restSec ?? 30} step={10} min={0} max={300} set={(n) => setBlock(edit, (b) => ({ ...b, target: { ...b.target, restSec: n } }))} />
             </>
           )}
-          {(exEd.blockType === 'hold' || exEd.blockType === 'reps') && (
+          {exEd.equipment.includes('ankleWeights') && (
+            <Stepper label="Ankle weight" unit="lb" value={editing.target.weight ?? 0} step={0.5} min={0} max={20} set={(n) => setBlock(edit, (b) => ({ ...b, target: { ...b.target, weight: n } }))} />
+          )}
+          {exEd.blockType === 'sequence' && <p class="sub note">The whole routine is done on one leg without putting the foot down except where it says, then the other leg.</p>}
+          {(exEd.blockType === 'hold' || exEd.blockType === 'reps' || exEd.blockType === 'sequence') && (
             <div class="seg-row" style={{ marginTop: '14px' }}>
-              {([['none', 'One side'], ['both', 'Both sides'], ['left', 'Left'], ['right', 'Right']] as [string, string][]).map(([v, l]) => (
+              {([['none', 'One side'], ['both', 'Both sides'], ['left', 'Left'], ['right', 'Right']] as [string, string][]).filter(([v]) => exEd.blockType !== 'sequence' || v !== 'none').map(([v, l]) => (
                 <button class={`seg ${(editing.sides ?? 'none') === v ? 'on' : ''}`} onClick={() => setBlock(edit, (b) => ({ ...b, sides: v === 'none' ? undefined : (v as Sides) }))}>{v === 'none' ? 'No sides' : l}</button>
               ))}
             </div>

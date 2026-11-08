@@ -13,6 +13,10 @@ export interface SessionRecord {
   id: string; date: string; routineId: string; routineName: string; totalSec: number;
   /** True when a camera-checked block was done without the camera (honor mode): half XP, never on a leaderboard. */
   unverified?: boolean;
+  /** Foot-down alarms, and how many were not fixed in time (each costs XP). */
+  drops?: number; penalties?: number;
+  /** Highest leg hold, in torso lengths above the standing foot. */
+  holdPeak?: number;
   blocks: { exerciseId: string; name: string; plannedSec: number; actualSec: number; completed: boolean; verifiedSec?: number; reps?: { left: number; right: number; any: number }; hurt?: boolean }[];
 }
 export const history = createStore<SessionRecord[]>('tkd.history.v1', []);

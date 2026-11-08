@@ -1,4 +1,4 @@
-import type { Equipment, Exercise, Target, Verify } from './types';
+import type { Equipment, Exercise, SeqPhase, Target, Verify } from './types';
 
 export const CATEGORIES = [
   'Dynamic warm-up', 'Stretching', 'Kick technique', 'Ankle weights', 'Resistance bands',
@@ -19,6 +19,23 @@ const shadow = mk('Shadow sparring', 'rounds', { rounds: 4, workSec: 120, restSe
 const spar = mk('Sparring formats', 'rounds', { rounds: 3, workSec: 120, restSec: 60 }, 'motion');
 const plyo = mk('Plyometrics', 'rounds', { rounds: 4, workSec: 30, restSec: 30 }, 'motion');
 const cool = mk('Cool-down', 'hold', { seconds: 60 }, 'presence');
+
+const kicks = (reps: number, pattern: 'round' | 'low-high' | 'hook-round' | 'low-high-mid-hook-round', label: string): SeqPhase[] => [
+  { kind: 'kicks', reps, tempo: 'slow', pattern, label: `${label}, slow` },
+  { kind: 'kicks', reps, tempo: 'fast', pattern, label: `${label}, fast` },
+];
+/** The Bill Wallace routine for one leg. The foot stays up except in the two `down` phases. */
+const BILL_WALLACE: SeqPhase[] = [
+  { kind: 'hold', seconds: 10, label: 'Hold the leg out straight, as high as you can. 1 of 3' },
+  { kind: 'hold', seconds: 10, label: 'Hold it out and high. 2 of 3' },
+  { kind: 'hold', seconds: 10, label: 'Hold it out and high. 3 of 3' },
+  { kind: 'down', seconds: 15, label: 'Foot down. Breathe.' },
+  ...kicks(5, 'round', 'Roundhouse'),
+  ...kicks(5, 'low-high', 'Low then high'),
+  ...kicks(5, 'hook-round', 'Hook then round'),
+  { kind: 'down', seconds: 15, label: 'Foot down. Breathe.' },
+  ...kicks(5, 'low-high-mid-hook-round', 'Low, high, middle, hook, round'),
+];
 
 export const EXERCISES: Exercise[] = [
   warm({ id: 'leg-swing-front', name: 'Front leg swings', perSide: true, cues: ['Stand tall, hold a wall if needed', 'Swing from the hip, not the back', 'Keep the swing smooth and relaxed'] }),
@@ -44,6 +61,8 @@ export const EXERCISES: Exercise[] = [
   tech({ id: 'back-kick', name: 'Back kick', perSide: true, cues: ['Look over the shoulder first', 'Chamber, then drive the heel back', 'Keep your balance on landing'] }),
   tech({ id: 'bill-wallace', name: 'Bill Wallace kick', perSide: true, cues: ['Lead leg from a sparring stance', 'Fast hip, fast snap', 'Re-chamber and return to stance'] }),
 
+  tech({ id: 'bill-wallace-routine', name: 'Bill Wallace routine', perSide: true, blockType: 'sequence', defaultTarget: {}, sequence: BILL_WALLACE, equipment: ['ankleWeights'],
+    cues: ['Do not put your foot down until it says so', 'Hold the leg out straight and as high as you can', 'Slow kicks are slow all the way, fast kicks are sharp', 'The camera beeps quickly if your foot touches down early'] }),
   weights({ id: 'weighted-slow-kicks', name: 'Slow controlled kicks', perSide: true, cues: ['Slow tempo, no snapping', 'Return to the chamber, do not whip back', 'Stop if the knee hurts'] }),
   weights({ id: 'weighted-chamber-hold', name: 'Chamber holds', perSide: true, cues: ['Hold the chamber steady', 'Keep your hips level', 'Lower under control'] }),
   weights({ id: 'weighted-knee-raise', name: 'Weighted knee raises', perSide: true, defaultTarget: { reps: 10, rounds: 3, restSec: 60 }, cues: ['Slow up, slower down', 'Stay tall'] }),

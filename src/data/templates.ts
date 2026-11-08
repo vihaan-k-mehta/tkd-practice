@@ -14,6 +14,10 @@ const cooldown = () => [b('hamstring', { seconds: 30 }), b('butterfly', { second
 
 export const TEMPLATES: Routine[] = [
   {
+    id: 'bill-wallace', name: 'Bill Wallace routine', template: true,
+    blocks: [...warmup(), { ...b('bill-wallace-routine'), sides: 'both' }, ...cooldown()],
+  },
+  {
     id: 'daily-stretch', name: 'Daily stretch', template: true,
     blocks: [b('leg-swing-front'), b('leg-swing-side'), b('hip-circles'), b('hamstring'), b('hip-flexor'), b('quad'), b('calf'), b('butterfly'), b('straddle'), b('pigeon')],
   },

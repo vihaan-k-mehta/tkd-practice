@@ -1,12 +1,16 @@
 import { exerciseById } from '../data/exercises';
-import type { Block, Exercise, Routine, Sides, Target } from '../data/types';
+import { PATTERN_KICKS, PATTERN_LABEL, type Block, type Exercise, type KickPattern, type Routine, type Sides, type Target } from '../data/types';
 
 export const READY_SEC = 5;
 export const SEC_PER_REP = 3; // planning estimate for reps blocks
 
+export type Leg = 'left' | 'right';
 export type Step =
-  | { type: 'timed'; phase: 'work' | 'rest'; segments: number[]; sideLabels?: string[]; caption?: string }
-  | { type: 'reps'; reps: number; side?: string; caption?: string };
+  | { type: 'timed'; phase: 'work' | 'rest'; segments: number[]; sideLabels?: string[]; caption?: string; /** The camera watches this leg for the foot touching down. */ watch?: boolean; leg?: Leg; hold?: boolean }
+  | { type: 'reps'; reps: number; side?: string; caption?: string; watch?: boolean; leg?: Leg; kicksPer?: number; tempo?: 'slow' | 'fast'; pattern?: KickPattern };
+
+/** Seconds for one slow or fast kick, used for estimates and for the tempo beeps. */
+export const KICK_SEC = { slow: 3, fast: 1.5 };
 
 const sideList = (s?: Sides): string[] | undefined =>
   s === 'both' ? ['Left side', 'Right side'] : s === 'left' ? ['Left side'] : s === 'right' ? ['Right side'] : undefined;
@@ -17,7 +21,18 @@ export function expandBlock(block: Block, ex: Exercise): Step[] {
   const sides = sideList(block.sides);
   const steps: Step[] = [];
 
-  if (ex.blockType === 'hold') {
+  if (ex.blockType === 'sequence') {
+    const legs: Leg[] = block.sides === 'left' ? ['left'] : block.sides === 'right' ? ['right'] : ['left', 'right'];
+    legs.forEach((leg, i) => {
+      const name = leg === 'left' ? 'Left side' : 'Right side';
+      if (i > 0) steps.push({ type: 'timed', phase: 'rest', segments: [20], caption: 'Switch legs. Foot down.' });
+      for (const ph of ex.sequence ?? []) {
+        if (ph.kind === 'hold') steps.push({ type: 'timed', phase: 'work', segments: [ph.seconds], sideLabels: [name], caption: ph.label, watch: true, leg, hold: true });
+        else if (ph.kind === 'down') steps.push({ type: 'timed', phase: 'rest', segments: [ph.seconds], caption: ph.label });
+        else steps.push({ type: 'reps', reps: ph.reps, side: name, caption: `${PATTERN_LABEL[ph.pattern]}, ${ph.tempo}`, watch: true, leg, kicksPer: PATTERN_KICKS[ph.pattern], tempo: ph.tempo, pattern: ph.pattern });
+      }
+    });
+  } else if (ex.blockType === 'hold') {
     const sec = t.seconds ?? 30;
     steps.push({ type: 'timed', phase: 'work', segments: sides ? sides.map(() => sec) : [sec], sideLabels: sides });
   } else if (ex.blockType === 'rest') {
@@ -40,7 +55,8 @@ export function expandBlock(block: Block, ex: Exercise): Step[] {
   return steps;
 }
 
-export const stepSeconds = (s: Step): number => (s.type === 'timed' ? s.segments.reduce((a, b) => a + b, 0) : s.reps * SEC_PER_REP);
+export const stepSeconds = (s: Step): number =>
+  s.type === 'timed' ? s.segments.reduce((a, b) => a + b, 0) : s.reps * (s.kicksPer ?? 1) * (s.tempo ? KICK_SEC[s.tempo] : SEC_PER_REP);
 
 export function blockSeconds(block: Block): number {
   const ex = exerciseById(block.exerciseId);
@@ -69,6 +85,7 @@ export function targetSummary(block: Block, ex: Exercise): string {
   switch (ex.blockType) {
     case 'hold': return `${sec(t.seconds)}${per}`;
     case 'rest': return sec(t.seconds);
+    case 'sequence': return `${block.sides === 'left' || block.sides === 'right' ? 'One leg' : 'Both legs'}${t.weight ? `, ${t.weight} lb` : ''}`;
     case 'rounds': return `${t.rounds ?? 1} rounds, ${sec(t.workSec)} on, ${sec(t.restSec)} off`;
     default: return `${(t.rounds ?? 1) > 1 ? `${t.rounds} sets of ` : ''}${t.reps ?? 10} reps${per}${(t.rounds ?? 1) > 1 ? `, ${sec(t.restSec)} rest` : ''}`;
   }

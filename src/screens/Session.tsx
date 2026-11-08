@@ -8,6 +8,7 @@ import { TimeSheet } from '../app/TimeSheet';
 import { CameraPreview } from './CameraPreview';
 import { CameraSetup } from './CameraSetup';
 import { useVerifier } from '../vision/useVerifier';
+import { newTotals } from '../vision/useLegWatch';
 import { useAlerts } from '../data/settings';
 import { audio } from '../engine/audio';
 import { keepAwake } from '../engine/wakelock';
@@ -47,6 +48,7 @@ export function SessionScreen({ id }: { id?: string }) {
   const [honorNow, setHonorNow] = useState(false);
   const usedCam = useRef(false);
   const weakCam = useRef(false);
+  const totals = useRef(newTotals());
   const [step, setStep] = useState<Step>({ s: 'check' });
   const [tested, setTested] = useState(false);
   const [sheet, setSheet] = useState(false);
@@ -82,11 +84,12 @@ export function SessionScreen({ id }: { id?: string }) {
     const rec: SessionRecord = {
       id: uid(), date: localDate(), routineId: routine.baseId ?? routine.id, routineName: routine.name,
       unverified: hasVerify && (!usedCam.current || weakCam.current) ? true : undefined,
+      drops: totals.current.drops || undefined, penalties: totals.current.penalties || undefined, holdPeak: totals.current.holdPeak ? Number(totals.current.holdPeak.toFixed(2)) : undefined,
       totalSec: Math.round(results.reduce((a, r) => a + (r?.actualSec ?? 0), 0)),
       blocks: routine.blocks.map((b, i) => {
         const ex = exerciseById(b.exerciseId)!; const r = results[i] ?? blank();
         return { exerciseId: b.exerciseId, name: ex.name, plannedSec: plan[i].reduce((a, s) => a + stepSeconds(s), 0), actualSec: Math.round(r.actualSec), completed: r.completed, verifiedSec: r.verifiedSec === undefined ? undefined : Math.round(r.verifiedSec),
-          reps: ex.blockType === 'reps' ? { left: r.left, right: r.right, any: r.any } : undefined, hurt: r.hurt };
+          reps: ex.blockType === 'reps' || ex.blockType === 'sequence' ? { left: r.left, right: r.right, any: r.any } : undefined, hurt: r.hurt };
       }),
     };
     history.set((h) => [rec, ...h]);
@@ -128,7 +131,7 @@ export function SessionScreen({ id }: { id?: string }) {
     const cameraDown = watched && ver.status !== 'ready';
     if (st.type === 'reps') {
       return <RepsRun key={`${bi}-${si}`} label={ex.name} reps={st.reps} side={st.side} caption={st.caption} next={nextLabel(bi, si)}
-        verifier={watched ? ver : undefined} cameraDown={cameraDown} counts={ex.verify === 'reps' ? 'camera' : 'tap'} mode={ex.verify === 'motion' ? 'motion' : 'presence'} onFail={(sec) => failBlock(sec)}
+        verifier={watched ? ver : undefined} cameraDown={cameraDown} kicksPer={st.kicksPer} tempo={st.tempo} watchLeg={watched && st.watch ? st.leg : undefined} totals={totals} counts={ex.verify === 'reps' ? 'camera' : 'tap'} mode={ex.verify === 'motion' ? 'motion' : 'presence'} onFail={(sec) => failBlock(sec)}
         onDone={(c, sec, verified) => finishStep(sec, c, st.side, verified ? sec : undefined)} onSkip={skipBlock} />;
     }
     const prev = plan[bi][si - 1];
@@ -136,7 +139,7 @@ export function SessionScreen({ id }: { id?: string }) {
       <BlockRun key={`${bi}-${si}`} kind={st.phase} label={ex.name} segments={st.segments} sideLabels={st.sideLabels} caption={st.caption} cfg={cfg}
         phaseChange={st.phase === 'work' && prev?.type === 'timed' && prev.phase === 'rest'} next={nextLabel(bi, si)}
         skipLabel={st.phase === 'rest' ? 'Skip rest' : 'Skip block'}
-        verifier={watched && st.phase === 'work' ? ver : undefined} cameraDown={cameraDown && st.phase === 'work'} verifyMode={ex.verify === 'motion' ? 'motion' : 'presence'} onFail={failBlock}
+        verifier={watched && st.phase === 'work' ? ver : undefined} cameraDown={cameraDown && st.phase === 'work'} watchLeg={watched && st.watch ? st.leg : undefined} hold={st.hold} totals={totals} verifyMode={ex.verify === 'motion' ? 'motion' : 'presence'} onFail={failBlock}
         onDone={(sec, vsec) => finishStep(sec, undefined, undefined, vsec)} onSkip={st.phase === 'rest' ? () => finishStep(0) : skipBlock} />
     );
   };
@@ -213,6 +216,7 @@ export function SessionScreen({ id }: { id?: string }) {
               );
             })}
           </ul>
+          {(totals.current.drops > 0) && <p class="sub note warn">Foot touched down {totals.current.drops} time{totals.current.drops > 1 ? 's' : ''}{totals.current.penalties > 0 ? `, ${totals.current.penalties} not fixed in time (-${Math.min(25, totals.current.penalties * 5)} XP)` : ', all fixed in time'}.</p>}
           {anyHurt && <p class="sub note warn">Rest and skip weighted work until the pain is gone.</p>}
           <button class="btn-primary" style={{ marginTop: '24px' }} onClick={() => go('today')}>Done</button>
         </>

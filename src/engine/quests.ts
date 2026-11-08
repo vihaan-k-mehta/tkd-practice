@@ -38,7 +38,7 @@ export type Event =
   | { type: 'injury'; until: string; date: string }
   | { type: 'mode'; mode: Mode; from: string; date: string };
 
-export const XP = { perBlock: 4, blockCap: 40, fullBonus: 10, daily: 20, weekly: 50, extra: 15, extraPerDay: 3, goal: 25, strictLoss: 50, makeUpCap: 3 };
+export const XP = { dropPenalty: 5, dropPenaltyCap: 25, perBlock: 4, blockCap: 40, fullBonus: 10, daily: 20, weekly: 50, extra: 15, extraPerDay: 3, goal: 25, strictLoss: 50, makeUpCap: 3 };
 
 export const freshProgress = (today: string): Progress => ({
   xp: 0, bestXp: 0, mode: 'light', chosen: false, processedThrough: '', passUsed: [], bwDrops: 0, makeUp: 0,
@@ -136,6 +136,7 @@ export function awardSession(s: Progress, r: SessionRecord, c: Ctx): Event[] {
     out.push({ type: 'xp', delta: XP.extra, reason: 'Extra practice', date: r.date, key: `extra:${r.date}:${r.id}` });
   }
   if (s.makeUp > 0 && total > 0 && completed === total) out.push({ type: 'makeupDone', date: r.date });
+  if ((r.penalties ?? 0) > 0) out.push({ type: 'xp', delta: -Math.min(XP.dropPenaltyCap, r.penalties! * XP.dropPenalty), reason: 'Foot dropped', date: r.date, key: `drop:${r.id}` });
   // Without the camera on a checked block, rewards are halved (honor mode).
   return r.unverified ? out.map((e) => (e.type === 'xp' && e.delta > 0 ? { ...e, delta: Math.floor(e.delta / 2) } : e)) : out;
 }

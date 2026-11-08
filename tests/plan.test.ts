@@ -75,8 +75,8 @@ describe('library and templates', () => {
       expect(expandBlock(bl, ex!).length).toBeGreaterThan(0);
     }
   });
-  it('ships the six templates', () => {
-    expect(TEMPLATES.map((t) => t.name)).toEqual(['Daily stretch', 'Kick day with Bill Wallace', 'Bag day', 'Plyo and legs', 'Shadow sparring', 'Full session']);
+  it('ships the guide templates and the Bill Wallace routine', () => {
+    expect(TEMPLATES.map((t) => t.name)).toEqual(['Bill Wallace routine', 'Daily stretch', 'Kick day with Bill Wallace', 'Bag day', 'Plyo and legs', 'Shadow sparring', 'Full session']);
   });
   it('partner-only sparring formats are flagged', () => {
     expect(exerciseById('spar-point')!.needsPartner).toBe(true);

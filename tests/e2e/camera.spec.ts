@@ -110,3 +110,14 @@ test('settings and the camera setup both link to the guided training', async ({ 
   await page.getByRole('link', { name: /Guided training/ }).click();
   await expect(page.getByRole('heading', { name: 'Guided training' })).toBeVisible();
 });
+
+test('the Bill Wallace routine is a template with a leg choice and an ankle weight', async ({ page }) => {
+  await page.goto('./#/routine/bill-wallace');
+  await expect(page.getByText('Bill Wallace routine').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Edit Bill Wallace routine' }).click();
+  await expect(page.getByText(/without putting the foot down except where it says/)).toBeVisible();
+  await page.getByRole('button', { name: 'Increase Ankle weight' }).click();
+  await expect(page.getByText('0.5 lb').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'One side' })).toHaveCount(0);
+  await page.screenshot({ path: 'screenshots/m8-bw-edit.png' });
+});
