@@ -1,4 +1,6 @@
 import { Settings as Gear } from 'lucide-preact';
+import { useState } from 'preact/hooks';
+import { TimeSheet } from '../app/TimeSheet';
 import { MatArt } from '../app/MatArt';
 import { addDays, doneFlags, missedDates, occurrences, streak } from '../engine/schedule';
 import { getRoutine, history, lastRoutine, localDate, schedule, userRoutines } from '../data/library';
@@ -23,6 +25,7 @@ export function Today() {
   const mine = userRoutines.use();
   const last = lastRoutine.use();
   const past = history.use();
+  const [timeOpen, setTimeOpen] = useState(false);
   const sched = schedule.use();
   const today = localDate();
   const occ = occurrences(sched, today);
@@ -47,7 +50,9 @@ export function Today() {
         <p class="sub">{routineMinutes(routine)} minutes, {routine.blocks.length} blocks</p>
         <div class="media"><MatArt /></div>
         <a class="btn-primary" href={`#/session/${routine.id}`} style={{ textDecoration: 'none' }}>Start session</a>
+        <button class="link-btn" style={{ margin: '8px auto 0' }} onClick={() => setTimeOpen(true)}>Short on time?</button>
         <a class="link-btn" href="#/routines" style={{ margin: '8px auto 0' }}>Choose a different routine</a>
+        {timeOpen && <TimeSheet routine={routine} onClose={() => setTimeOpen(false)} />}
       </article>
 
       <p class="eyebrow">Recent</p>

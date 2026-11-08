@@ -20,7 +20,7 @@ export interface Exercise {
 }
 
 export interface Block { exerciseId: string; target: Target; sides?: Sides }
-export interface Routine { id: string; name: string; blocks: Block[]; template?: boolean }
+export interface Routine { id: string; name: string; blocks: Block[]; template?: boolean; /** Set on a shortened copy: the routine it came from. */ baseId?: string }
 
 export const EQUIPMENT_LABEL: Record<Equipment, string> = {
   ankleWeights: 'Ankle weights', bands: 'Resistance bands', heavyBag: 'Heavy bag', rope: 'Jump rope', box: 'Box',

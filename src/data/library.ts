@@ -20,8 +20,10 @@ export function localDate(d = new Date()): string {
 export const schedule = createStore<Schedule>('tkd.schedule.v1', emptySchedule(localDate()));
 
 export const uid =() => Math.random().toString(36).slice(2, 10);
+/** The most recent shortened routine, so a session can run it without cluttering the saved list. */
+export const quickRoutine = createStore<{ routine?: Routine }>('tkd.quick.v1', {});
 export const getRoutine = (id: string, mine: Routine[] = userRoutines.get()): Routine | undefined =>
-  TEMPLATES.find((t) => t.id === id) ?? mine.find((r) => r.id === id);
+  TEMPLATES.find((t) => t.id === id) ?? mine.find((r) => r.id === id) ?? (quickRoutine.get().routine?.id === id ? quickRoutine.get().routine : undefined);
 
 export function saveRoutine(r: Routine) {
   userRoutines.set((list) => (list.some((x) => x.id === r.id) ? list.map((x) => (x.id === r.id ? r : x)) : [...list, r]));

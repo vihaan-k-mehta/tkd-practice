@@ -3,6 +3,7 @@ import { ChevronDown, Volume2 } from 'lucide-preact';
 import { BlockRun } from './BlockRun';
 import { RepsRun } from './RepsRun';
 import { Sheet } from '../app/Sheet';
+import { TimeSheet } from '../app/TimeSheet';
 import { useAlerts } from '../data/settings';
 import { audio } from '../engine/audio';
 import { keepAwake } from '../engine/wakelock';
@@ -28,6 +29,7 @@ export function SessionScreen({ id }: { id?: string }) {
   const [step, setStep] = useState<Step>({ s: 'check' });
   const [tested, setTested] = useState(false);
   const [sheet, setSheet] = useState(false);
+  const [timeOpen, setTimeOpen] = useState(false);
   const [wasHidden, setWasHidden] = useState(false);
   const [results, setResults] = useState<Result[]>([]);
   const saved = useRef(false);
@@ -53,7 +55,7 @@ export function SessionScreen({ id }: { id?: string }) {
     if (step.s !== 'done' || saved.current || !routine) return;
     saved.current = true;
     const rec: SessionRecord = {
-      id: uid(), date: localDate(), routineId: routine.id, routineName: routine.name,
+      id: uid(), date: localDate(), routineId: routine.baseId ?? routine.id, routineName: routine.name,
       totalSec: Math.round(results.reduce((a, r) => a + (r?.actualSec ?? 0), 0)),
       blocks: routine.blocks.map((b, i) => {
         const ex = exerciseById(b.exerciseId)!; const r = results[i] ?? blank();
@@ -62,7 +64,7 @@ export function SessionScreen({ id }: { id?: string }) {
       }),
     };
     history.set((h) => [rec, ...h]);
-    lastRoutine.set(() => ({ id: routine.id }));
+    lastRoutine.set(() => ({ id: routine.baseId ?? routine.id }));
   }, [step.s]);
 
   if (!routine) {
@@ -129,6 +131,8 @@ export function SessionScreen({ id }: { id?: string }) {
           {reminders.size > 0 && <p class="sub note warn">This routine stretches before a dynamic warm-up. Do a few leg swings first.</p>}
           <button class="btn-primary" style={{ marginTop: '28px' }} disabled={!tested || n === 0} onClick={() => setStep({ s: 'ready', bi: 0 })}>Start</button>
           {!tested && <p class="sub hint">Play the test beep to continue.</p>}
+          <button class="link-btn" style={{ margin: '16px auto 0' }} onClick={() => setTimeOpen(true)}>Short on time?</button>
+          {timeOpen && <TimeSheet routine={routine} onClose={() => setTimeOpen(false)} />}
         </>
       )}
 
