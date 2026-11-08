@@ -2,10 +2,12 @@ import { useEffect, useState } from 'preact/hooks';
 import { LogIn, LogOut, UserPlus } from 'lucide-preact';
 import { cleanDisplayName, isEmail, lockLeft, MAX_TRIES, passwordProblem } from '../data/authRules';
 import { loadProfile, saveProfile, signIn, signOut, signUp, useAuth } from '../data/auth';
+import { flush, sync, syncNow } from '../data/sync';
 
 /** Optional account: email and password. The app works fully without signing in. */
 export function Account() {
   const { user, ready } = useAuth();
+  const cloud = sync.use();
   const [mode, setMode] = useState<'in' | 'up'>('in');
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
@@ -56,13 +58,16 @@ export function Account() {
     return (
       <>
         {landingNote}
-        <ul class="rowlist"><li><span class="grow">Signed in<span class="sub block">{user.email}</span></span></li></ul>
+        <ul class="rowlist"><li><span class="grow">Signed in<span class="sub block">{user.email}</span></span></li>
+          <li><span class="grow">Cloud save<span class="sub block" role="status">{cloud.status === 'syncing' ? 'Saving...' : cloud.status === 'ok' ? `Saved ${new Date(cloud.lastAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : cloud.status === 'offline' ? 'Waiting for a connection. It will save when you are back online.' : 'Starting...'}</span></span>
+            <button class="select" onClick={() => void syncNow()} disabled={cloud.status === 'syncing'}>Sync now</button></li></ul>
+        <p class="sub note">Your history, ankle weights and camera tuning are saved to your account, so they follow you and stay separate from anyone else who uses this phone.</p>
         <label class="eyebrow" for="dname">Name on the leaderboard</label>
         <input id="dname" class="field" maxLength={20} value={name} placeholder="Pick a name"
           onInput={(e) => { setName(cleanDisplayName((e.target as HTMLInputElement).value)); setSaved(false); }} />
         <div class="two" style={{ marginTop: '12px' }}>
           <button class="select" onClick={async () => { const { error } = await saveProfile(user.id, name); setSaved(!error); setMsg(error ? 'Could not save your name.' : ''); }}>Save name</button>
-          <button class="select" onClick={() => signOut()}>Sign out<LogOut size={20} aria-hidden="true" /></button>
+          <button class="select" onClick={async () => { await flush(); await signOut(); }}>Sign out<LogOut size={20} aria-hidden="true" /></button>
         </div>
         {saved && <p class="sub note" role="status">Saved.</p>}
         {msg && <p class="sub note warn" role="alert">{msg}</p>}

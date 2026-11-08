@@ -4,6 +4,7 @@ import { history, localDate, notice, progress, schedule } from '../data/library'
 import { catchUp } from '../engine/quests';
 import { DebugPose } from '../screens/DebugPose';
 import { handleEmailLanding } from '../data/auth';
+import { startSync } from '../data/sync';
 import { Train } from '../screens/Train';
 import { Stats } from '../screens/Stats';
 import { Quests } from '../screens/Quests';
@@ -27,6 +28,7 @@ function judgeDays() {
 }
 
 export function App() {
+  useEffect(() => { startSync(); }, []);
   useEffect(() => {
     void handleEmailLanding().then((r) => { if (r) { try { sessionStorage.setItem('tkd.landing', r); } catch { /* ignore */ } location.hash = '#/settings'; } });
   }, []);

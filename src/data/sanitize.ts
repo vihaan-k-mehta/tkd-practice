@@ -108,3 +108,39 @@ function numMap(v: unknown, lo: number, hi: number): Record<string, number> {
   }
   return out;
 }
+
+import type { CameraSettings } from './library';
+import type { Equipment } from './types';
+
+export const DEFAULT_CAMERA: CameraSettings = { use: true, honor: false, skeleton: false, sensitivity: 'relaxed', quality: 'full', exercise: {} };
+const NUM = (v: unknown, lo: number, hi: number): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : undefined);
+
+export function cleanCamera(v: unknown, d: CameraSettings = DEFAULT_CAMERA): CameraSettings {
+  const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
+  const kc = (o.kickCfg && typeof o.kickCfg === 'object' ? o.kickCfg : {}) as Record<string, unknown>;
+  const kickCfg = { kickHeight: NUM(kc.kickHeight, -1, 1), extendAngle: NUM(kc.extendAngle, 100, 175), chamberAngle: NUM(kc.chamberAngle, 40, 140), returnAngle: NUM(kc.returnAngle, 60, 170) };
+  const exercise: CameraSettings['exercise'] = {};
+  if (o.exercise && typeof o.exercise === 'object') {
+    for (const [id, raw] of Object.entries(o.exercise as Record<string, unknown>).slice(0, 80)) {
+      if (!ID.test(id) || !raw || typeof raw !== 'object') continue;
+      const x = raw as Record<string, unknown>;
+      const k = (x.kickCfg && typeof x.kickCfg === 'object' ? x.kickCfg : {}) as Record<string, unknown>;
+      const kcx = { kickHeight: NUM(k.kickHeight, -1, 1), extendAngle: NUM(k.extendAngle, 100, 175), chamberAngle: NUM(k.chamberAngle, 40, 140), returnAngle: NUM(k.returnAngle, 60, 170) };
+      exercise[id] = { motionThreshold: NUM(x.motionThreshold, 0.02, 0.5), kickCfg: Object.values(kcx).some((q) => q !== undefined) ? kcx : undefined, samples: NUM(x.samples, 0, 100) ?? 0 };
+    }
+  }
+  return {
+    use: o.use !== false, honor: o.honor === true, skeleton: o.skeleton === true,
+    kickHeight: NUM(o.kickHeight, -1, 1),
+    sensitivity: o.sensitivity === 'normal' || o.sensitivity === 'strict' || o.sensitivity === 'relaxed' ? o.sensitivity : d.sensitivity,
+    quality: o.quality === 'lite' ? 'lite' : 'full',
+    motionThreshold: NUM(o.motionThreshold, 0.02, 0.5),
+    kickCfg: Object.values(kickCfg).some((x) => x !== undefined) ? kickCfg : undefined,
+    exercise,
+  };
+}
+
+export function cleanEquipment(v: unknown): Record<Equipment, boolean> {
+  const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
+  return { ankleWeights: o.ankleWeights !== false, bands: o.bands !== false, heavyBag: o.heavyBag !== false, rope: o.rope !== false, box: o.box !== false };
+}

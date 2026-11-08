@@ -9,16 +9,18 @@ export function createStore<T>(key: string, initial: T, clean?: (parsed: unknown
     else if (raw) cur = typeof initial === 'object' && !Array.isArray(initial) ? { ...initial, ...JSON.parse(raw) } : JSON.parse(raw);
   } catch { /* use defaults */ }
   const subs = new Set<() => void>();
+  const persist = () => { try { localStorage.setItem(key, JSON.stringify(cur)); } catch { /* ignore */ } subs.forEach((f) => f()); };
   const get = () => cur;
-  const set = (fn: (v: T) => T) => {
-    cur = fn(cur);
-    try { localStorage.setItem(key, JSON.stringify(cur)); } catch { /* ignore */ }
-    subs.forEach((f) => f());
-  };
+  const set = (fn: (v: T) => T) => { cur = fn(cur); persist(); };
+  /** Replace the value with something untrusted (for example from the cloud). It is cleaned first when a cleaner exists. */
+  const replace = (raw: unknown) => { cur = clean ? clean(raw, initial) : (raw as T); persist(); };
+  const reset = () => { cur = initial; persist(); };
+  /** Subscribe without a component. Returns the unsubscribe function. */
+  const watch = (fn: () => void) => { subs.add(fn); return () => { subs.delete(fn); }; };
   const use = (): T => {
     const [, tick] = useState(0);
     useEffect(() => { const f = () => tick((n) => n + 1); subs.add(f); return () => { subs.delete(f); }; }, []);
     return cur;
   };
-  return { get, set, use };
+  return { get, set, use, replace, reset, watch };
 }
