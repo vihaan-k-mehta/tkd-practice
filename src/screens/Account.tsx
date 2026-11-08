@@ -17,6 +17,8 @@ export function Account() {
   const [name, setName] = useState('');
   const [saved, setSaved] = useState(false);
 
+  const [landing, setLanding] = useState<string | null>(null);
+  useEffect(() => { try { const v = sessionStorage.getItem('tkd.landing'); if (v) { setLanding(v); sessionStorage.removeItem('tkd.landing'); } } catch { /* ignore */ } }, []);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
   useEffect(() => { if (user) loadProfile(user.id).then(setName).catch(() => {}); }, [user?.id]);
 
@@ -46,9 +48,14 @@ export function Account() {
 
   if (!ready) return <p class="sub">Checking sign-in...</p>;
 
+  const landingNote = landing === 'confirmed'
+    ? <p class="sub note" role="status">Your email is confirmed. {user ? 'You are signed in.' : 'Sign in with your email and password.'}</p>
+    : landing === 'error' ? <p class="sub note warn" role="alert">That confirmation link did not work or has expired. Try signing in, or create the account again.</p> : null;
+
   if (user) {
     return (
       <>
+        {landingNote}
         <ul class="rowlist"><li><span class="grow">Signed in<span class="sub block">{user.email}</span></span></li></ul>
         <label class="eyebrow" for="dname">Name on the leaderboard</label>
         <input id="dname" class="field" maxLength={20} value={name} placeholder="Pick a name"
@@ -65,6 +72,7 @@ export function Account() {
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); void submit(); }} noValidate>
+      {landingNote}
       <p class="sub">Optional. An account lets you join a leaderboard later. Everything else works without one.</p>
       <div class="seg-row" role="tablist" style={{ marginTop: '12px' }}>
         <button type="button" role="tab" aria-selected={mode === 'in'} class={`seg ${mode === 'in' ? 'on' : ''}`} onClick={() => { setMode('in'); setMsg(''); }}>Sign in</button>

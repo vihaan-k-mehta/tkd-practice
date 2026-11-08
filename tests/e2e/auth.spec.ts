@@ -61,3 +61,26 @@ test('wrong passwords give one vague message, then sign-in pauses for a minute',
   await page.goto('./#/today');
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
 });
+
+test('landing from a confirmation email: no stuck page, URL cleaned, clear next step', async ({ page }) => {
+  await page.route('**/auth/v1/token**', (r) => r.fulfill({ status: 400, json: { code: 400, error_code: 'flow_state_not_found', msg: 'no verifier here' } }));
+  await page.goto('./?code=abc123#/today');
+  await expect(page.getByText('Your email is confirmed. Sign in with your email and password.')).toBeVisible();
+  expect(page.url()).not.toContain('code=');
+  expect(page.url()).toContain('#/settings');
+
+  await page.goto('./?error=access_denied&error_code=otp_expired#/today');
+  await expect(page.getByText(/confirmation link did not work or has expired/)).toBeVisible();
+});
+
+test('sign-up asks for the confirmation link to come back to this app, not localhost', async ({ page }) => {
+  let url = '';
+  await page.route('**/auth/v1/signup**', async (r) => { url = r.request().url(); await r.fulfill({ status: 200, json: { id: 'x', email: 'a@b.co', aud: 'authenticated' } }); });
+  await page.goto('./#/settings');
+  await page.getByRole('tab', { name: 'Create account' }).click();
+  await page.getByLabel('Email').fill('new@example.com');
+  await page.getByLabel('Password').fill('blue-kick-fast-7');
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await expect(page.getByText(/Check your email to confirm/)).toBeVisible();
+  expect(decodeURIComponent(url)).toContain('redirect_to=http://localhost:4173/tkd-practice/');
+});

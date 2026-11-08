@@ -15,6 +15,7 @@ export function useLoc(): Loc {
   const [l, setL] = useState<Loc>(read());
   useEffect(() => {
     const on = () => setL(read());
+    on(); // catch a change that happened between the first render and now
     addEventListener('hashchange', on);
     return () => removeEventListener('hashchange', on);
   }, []);

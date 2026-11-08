@@ -3,6 +3,7 @@ import { useLoc } from './router';
 import { history, localDate, notice, progress, schedule } from '../data/library';
 import { catchUp } from '../engine/quests';
 import { DebugPose } from '../screens/DebugPose';
+import { handleEmailLanding } from '../data/auth';
 import { Quests } from '../screens/Quests';
 import { TabBar } from './TabBar';
 import { Today } from '../screens/Today';
@@ -24,6 +25,9 @@ function judgeDays() {
 }
 
 export function App() {
+  useEffect(() => {
+    void handleEmailLanding().then((r) => { if (r) { try { sessionStorage.setItem('tkd.landing', r); } catch { /* ignore */ } location.hash = '#/settings'; } });
+  }, []);
   useEffect(() => {
     judgeDays();
     const on = () => { if (document.visibilityState === 'visible') judgeDays(); };
