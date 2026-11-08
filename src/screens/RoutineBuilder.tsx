@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp, ChevronLeft, Plus } from 'lucide-preact';
 import { Sheet, Stepper } from '../app/Sheet';
 import { CATEGORIES, EXERCISES, exerciseById } from '../data/exercises';
 import { blockFor } from '../data/templates';
-import { deleteRoutine, equipment, getRoutine, saveRoutine, uid, userRoutines } from '../data/library';
+import { deleteRoutine, equipment, getRoutine, progress, saveRoutine, uid, userRoutines } from '../data/library';
 import { routineMinutes, targetSummary, warmupReminderIndexes } from '../engine/plan';
 import { go } from '../app/router';
 import type { Block, Routine, Sides } from '../data/types';
@@ -50,6 +50,7 @@ export function RoutineBuilder({ id }: { id?: string }) {
 
   const pickList = EXERCISES.filter((e) => e.name.toLowerCase().includes(q.toLowerCase()) && (cat === 'All' || e.category === cat) && (!onlyMine || e.equipment.every((x) => own[x])));
   const editing = edit !== null ? draft.blocks[edit] : null;
+  const prog = progress.use();
   const exEd = editing ? exerciseById(editing.exerciseId) : null;
 
   return (
@@ -125,7 +126,7 @@ export function RoutineBuilder({ id }: { id?: string }) {
             </>
           )}
           {exEd.equipment.includes('ankleWeights') && (
-            <Stepper label="Ankle weight" unit="lb" value={editing.target.weight ?? 0} step={0.5} min={0} max={20} set={(n) => setBlock(edit, (b) => ({ ...b, target: { ...b.target, weight: n } }))} />
+            <Stepper label="Ankle weight" unit="lb" value={prog.weights[exEd.id] ?? 0} step={0.5} min={0} max={20} set={(n) => progress.set((x) => ({ ...x, weights: { ...x.weights, [exEd.id]: n } }))} />
           )}
           {exEd.blockType === 'sequence' && <p class="sub note">The whole routine is done on one leg without putting the foot down except where it says, then the other leg.</p>}
           {(exEd.blockType === 'hold' || exEd.blockType === 'reps' || exEd.blockType === 'sequence') && (

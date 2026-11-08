@@ -17,7 +17,7 @@ export interface SessionRecord {
   drops?: number; penalties?: number;
   /** Highest leg hold, in torso lengths above the standing foot. */
   holdPeak?: number;
-  blocks: { exerciseId: string; name: string; plannedSec: number; actualSec: number; completed: boolean; verifiedSec?: number; reps?: { left: number; right: number; any: number }; hurt?: boolean }[];
+  blocks: { exerciseId: string; name: string; plannedSec: number; actualSec: number; completed: boolean; verifiedSec?: number; /** Ankle weight in pounds, and sets done. */ weightLb?: number; sets?: number; reps?: { left: number; right: number; any: number }; hurt?: boolean }[];
 }
 export const history = createStore<SessionRecord[]>('tkd.history.v1', []);
 

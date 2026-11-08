@@ -1,4 +1,4 @@
-import { CalendarDays, Dumbbell, House, Swords, Trophy } from 'lucide-preact';
+import { BarChart3, CalendarDays, Dumbbell, House, Swords } from 'lucide-preact';
 type Route = string;
 
 const tabs = [
@@ -6,7 +6,7 @@ const tabs = [
   { id: 'routines', label: 'Routines', Icon: Dumbbell },
   { id: 'schedule', label: 'Schedule', Icon: CalendarDays },
   { id: 'quests', label: 'Quests', Icon: Swords },
-  { id: 'ranks', label: 'Ranks', Icon: Trophy },
+  { id: 'stats', label: 'Stats', Icon: BarChart3 },
 ] as const;
 
 export function TabBar({ route }: { route: Route }) {

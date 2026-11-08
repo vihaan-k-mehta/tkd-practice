@@ -85,6 +85,7 @@ export function cleanProgress(v: unknown, fallback: Progress): Progress {
     awarded: strs(o.awarded, 2000, /^[A-Za-z0-9:_-]{1,90}$/),
     injuryUntil: typeof o.injuryUntil === 'string' && DATE.test(o.injuryUntil) ? o.injuryUntil : undefined,
     bwDrops: num(o.bwDrops, 0, 100) ?? 0, makeUp: num(o.makeUp, 0, 3) ?? 0,
+    weights: numMap(o.weights, 0, 50), cleanStreak: numMap(o.cleanStreak, 0, 50),
     goals: (Array.isArray(o.goals) ? o.goals : []).slice(0, 50).flatMap((g) => {
       const x = (g ?? {}) as Record<string, unknown>;
       const title = text(x.title, 60);
@@ -95,4 +96,15 @@ export function cleanProgress(v: unknown, fallback: Progress): Progress {
       return typeof x.date === 'string' && DATE.test(x.date) ? [{ date: x.date, text: text(x.text, 120) }] : [];
     }),
   };
+}
+
+/** A small map of exercise id to a clamped number. */
+function numMap(v: unknown, lo: number, hi: number): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (v && typeof v === 'object') {
+    for (const [k, x] of Object.entries(v as Record<string, unknown>).slice(0, 100)) {
+      if (ID.test(k) && typeof x === 'number' && Number.isFinite(x)) out[k] = Math.max(lo, Math.min(hi, x));
+    }
+  }
+  return out;
 }

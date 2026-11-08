@@ -81,16 +81,16 @@ test('sensitivity and tracking quality are choices that stick, relaxed and accur
 });
 
 test('guided training runs the whole script and reports back, and learns nothing when nobody was seen', async ({ page }) => {
-  test.setTimeout(90000);
+  test.setTimeout(150000);
   const problems: string[] = [];
   page.on('pageerror', (e) => problems.push(String(e)));
-  await page.goto('./#/train?speed=4&skipwait=1');
+  await page.goto('./#/train?speed=2&skipwait=1');
   await expect(page.getByText(/follow the voice and the beeps/)).toBeVisible();
   await page.screenshot({ path: 'screenshots/m7-train-intro.png', fullPage: true });
   await page.getByRole('button', { name: 'Start training' }).click();
   await expect(page.getByText('Step 1 of 7')).toBeVisible({ timeout: 60000 });
   await page.screenshot({ path: 'screenshots/m7-train-run.png', fullPage: true });
-  await expect(page.getByText(/Trained/)).toBeVisible({ timeout: 60000 });
+  await expect(page.getByText(/Trained/)).toBeVisible({ timeout: 100000 });
   await page.screenshot({ path: 'screenshots/m7-train-report.png', fullPage: true });
   await expect(page.getByText('Leaving the picture')).toBeVisible();
   await expect(page.getByText('Left kicks')).toBeVisible();

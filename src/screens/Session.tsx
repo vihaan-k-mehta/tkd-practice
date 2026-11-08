@@ -15,6 +15,7 @@ import { keepAwake } from '../engine/wakelock';
 import { exerciseById } from '../data/exercises';
 import { camera, equipment, getRoutine, history, lastRoutine, localDate, progress, schedule, uid, userRoutines, type SessionRecord } from '../data/library';
 import { applyEvents, awardSession, quitEvents } from '../engine/quests';
+import { progressWeights } from '../engine/progression';
 import { blockFor } from '../data/templates';
 import { expandBlock, routineMinutes, stepSeconds, warmupReminderIndexes, READY_SEC } from '../engine/plan';
 import type { Beep } from '../engine/alerts';
@@ -88,7 +89,7 @@ export function SessionScreen({ id }: { id?: string }) {
       totalSec: Math.round(results.reduce((a, r) => a + (r?.actualSec ?? 0), 0)),
       blocks: routine.blocks.map((b, i) => {
         const ex = exerciseById(b.exerciseId)!; const r = results[i] ?? blank();
-        return { exerciseId: b.exerciseId, name: ex.name, plannedSec: plan[i].reduce((a, s) => a + stepSeconds(s), 0), actualSec: Math.round(r.actualSec), completed: r.completed, verifiedSec: r.verifiedSec === undefined ? undefined : Math.round(r.verifiedSec),
+        return { exerciseId: b.exerciseId, name: ex.name, plannedSec: plan[i].reduce((a, s) => a + stepSeconds(s), 0), actualSec: Math.round(r.actualSec), completed: r.completed, weightLb: ex.equipment.includes('ankleWeights') ? (progress.get().weights[b.exerciseId] ?? 0) : undefined, sets: ex.blockType === 'reps' ? (b.target.rounds ?? 1) : ex.blockType === 'sequence' ? 1 : undefined, verifiedSec: r.verifiedSec === undefined ? undefined : Math.round(r.verifiedSec),
           reps: ex.blockType === 'reps' || ex.blockType === 'sequence' ? { left: r.left, right: r.right, any: r.any } : undefined, hurt: r.hurt };
       }),
     };
@@ -96,6 +97,7 @@ export function SessionScreen({ id }: { id?: string }) {
     lastRoutine.set(() => ({ id: routine.baseId ?? routine.id }));
     const ev = awardSession(progress.get(), rec, { schedule: schedule.get(), history: history.get(), today: localDate() });
     progress.set((pr) => applyEvents(pr, ev));
+    progress.set((pr) => applyEvents(pr, progressWeights(pr, rec, { today: localDate() })));
     setXpGain(ev.reduce((a, e) => a + (e.type === 'xp' ? e.delta : 0), 0));
   }, [step.s]);
 

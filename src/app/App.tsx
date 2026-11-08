@@ -5,6 +5,7 @@ import { catchUp } from '../engine/quests';
 import { DebugPose } from '../screens/DebugPose';
 import { handleEmailLanding } from '../data/auth';
 import { Train } from '../screens/Train';
+import { Stats } from '../screens/Stats';
 import { Quests } from '../screens/Quests';
 import { TabBar } from './TabBar';
 import { Today } from '../screens/Today';
@@ -46,7 +47,7 @@ export function App() {
       {name === 'routine' && <RoutineBuilder key={id} id={id} />}
       {name === 'schedule' && <SchedulePage />}
       {name === 'quests' && <Quests />}
-      {name === 'ranks' && <Placeholder title="Ranks" note="No group yet." />}
+      {name === 'stats' && <Stats />}
       {name === 'settings' && <Settings />}
       {name === 'animations' && <AnimSheet />}
       {name === 'debug-pose' && <DebugPose />}

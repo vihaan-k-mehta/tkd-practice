@@ -23,6 +23,10 @@ export interface Progress {
   bwLocked: string[];      // Mondays of weeks the Bill Wallace weight cannot advance
   goals: Goal[];
   log: LogEntry[];
+  /** Current ankle weight in pounds, per exercise. */
+  weights: Record<string, number>;
+  /** Clean sessions in a row at the current weight, per exercise. */
+  cleanStreak: Record<string, number>;
 }
 
 export interface Ctx { schedule: Schedule; history: SessionRecord[]; today: string }
@@ -36,13 +40,16 @@ export type Event =
   | { type: 'weekFail'; week: string; date: string }
   | { type: 'bwLock'; week: string; date: string }
   | { type: 'injury'; until: string; date: string }
-  | { type: 'mode'; mode: Mode; from: string; date: string };
+  | { type: 'mode'; mode: Mode; from: string; date: string }
+  | { type: 'weight'; exerciseId: string; lb: number; reason: string; date: string }
+  | { type: 'clean'; exerciseId: string; streak: number; date: string }
+  | { type: 'bwDropUsed'; date: string };
 
 export const XP = { dropPenalty: 5, dropPenaltyCap: 25, perBlock: 4, blockCap: 40, fullBonus: 10, daily: 20, weekly: 50, extra: 15, extraPerDay: 3, goal: 25, strictLoss: 50, makeUpCap: 3 };
 
 export const freshProgress = (today: string): Progress => ({
   xp: 0, bestXp: 0, mode: 'light', chosen: false, processedThrough: '', passUsed: [], bwDrops: 0, makeUp: 0,
-  forfeited: [], awarded: [], weekFailed: [], bwLocked: [], goals: [], log: [],
+  forfeited: [], awarded: [], weekFailed: [], bwLocked: [], goals: [], log: [], weights: {}, cleanStreak: {},
 });
 
 const weekStart = (d: string) => addDays(d, -weekdayOf(d));
@@ -156,6 +163,7 @@ const describe = (e: Event): string | null => {
     case 'weekFail': return 'Weekly quest failed, two misses this week';
     case 'bwLock': return 'Bill Wallace weight cannot advance this week';
     case 'injury': return `Injury mode on until ${e.until}`;
+    case 'weight': return `Ankle weight now ${e.lb} lb. ${e.reason}`;
     default: return null;
   }
 };
@@ -175,6 +183,9 @@ export function applyEvents(s: Progress, events: Event[]): Progress {
     else if (e.type === 'weekFail') { if (!n.weekFailed.includes(e.week)) n.weekFailed.push(e.week); }
     else if (e.type === 'bwLock') { if (!n.bwLocked.includes(e.week)) n.bwLocked.push(e.week); }
     else if (e.type === 'injury') { n.injuryUntil = e.until; n.bwDrops += 1; }
+    else if (e.type === 'weight') n.weights = { ...n.weights, [e.exerciseId]: e.lb };
+    else if (e.type === 'clean') n.cleanStreak = { ...n.cleanStreak, [e.exerciseId]: e.streak };
+    else if (e.type === 'bwDropUsed') n.bwDrops = Math.max(0, n.bwDrops - 1);
     const text = describe(e);
     if (text) n.log.unshift({ date: e.date, text });
   }
