@@ -107,3 +107,14 @@ describe('equipment', () => {
     expect(equipmentNeeded(r).sort()).toEqual(['heavyBag', 'rope']);
   });
 });
+
+describe('camera coverage', () => {
+  it('every exercise is camera-checked in some way, so the detail screen never says it is unchecked', async () => {
+    const { EXERCISES } = await import('../src/data/exercises');
+    expect(EXERCISES.filter((e) => e.verify === 'none').map((e) => e.id)).toEqual([]);
+  });
+  it('leg swings, knee raises and hip circles check that you are moving', async () => {
+    const { exerciseById } = await import('../src/data/exercises');
+    for (const id of ['leg-swing-front', 'leg-swing-side', 'hip-circles', 'knee-raises']) expect(exerciseById(id)!.verify, id).toBe('motion');
+  });
+});

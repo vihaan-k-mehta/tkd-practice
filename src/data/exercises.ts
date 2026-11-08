@@ -9,11 +9,11 @@ type Init = Pick<Exercise, 'id' | 'name' | 'cues'> & Partial<Exercise>;
 const mk = (category: string, blockType: Exercise['blockType'], defaultTarget: Target, verify: Verify, equipment: Equipment[] = []) =>
   (e: Init): Exercise => ({ category, blockType, defaultTarget, verify, equipment, ...e });
 
-const warm = mk('Dynamic warm-up', 'reps', { reps: 12 }, 'none');
+const warm = mk('Dynamic warm-up', 'reps', { reps: 12 }, 'motion');
 const stretch = mk('Stretching', 'hold', { seconds: 40 }, 'presence');
 const tech = mk('Kick technique', 'reps', { reps: 10, rounds: 3, restSec: 60 }, 'reps');
 const weights = mk('Ankle weights', 'reps', { reps: 8, rounds: 3, restSec: 60 }, 'reps', ['ankleWeights']);
-const bands = mk('Resistance bands', 'reps', { reps: 12, rounds: 3, restSec: 45 }, 'none', ['bands']);
+const bands = mk('Resistance bands', 'reps', { reps: 12, rounds: 3, restSec: 45 }, 'motion', ['bands']);
 const bag = mk('Heavy bag', 'rounds', { rounds: 3, workSec: 180, restSec: 60 }, 'motion', ['heavyBag']);
 const shadow = mk('Shadow sparring', 'rounds', { rounds: 4, workSec: 120, restSec: 30 }, 'motion');
 const spar = mk('Sparring formats', 'rounds', { rounds: 3, workSec: 120, restSec: 60 }, 'motion');
@@ -25,7 +25,7 @@ export const EXERCISES: Exercise[] = [
   warm({ id: 'leg-swing-side', name: 'Side leg swings', perSide: true, cues: ['Face the wall and swing across your body', 'Keep your hips square', 'Go a little higher each swing'] }),
   warm({ id: 'hip-circles', name: 'Hip circles', perSide: true, cues: ['Lift the knee, then draw a big circle', 'Stay upright', 'Reverse direction halfway'] }),
   warm({ id: 'knee-raises', name: 'Knee raises', perSide: true, cues: ['Drive the knee to hip height', 'Stay tall on the standing leg', 'Lower under control'] }),
-  warm({ id: 'ankle-circles', name: 'Ankle circles', perSide: true, defaultTarget: { reps: 10 }, cues: ['Slow, full circles', 'Switch direction halfway'] }),
+  warm({ id: 'ankle-circles', name: 'Ankle circles', perSide: true, verify: 'presence', defaultTarget: { reps: 10 }, cues: ['Slow, full circles', 'Switch direction halfway'] }),
 
   stretch({ id: 'hamstring', name: 'Hamstring stretch', perSide: true, cues: ['Hinge from the hips, back flat', 'Stop at a stretch, not pain', 'Breathe out as you lean in'] }),
   stretch({ id: 'hip-flexor', name: 'Hip flexor lunge', perSide: true, cues: ['Back knee down, hips forward', 'Squeeze the back glute', 'Keep your chest up'] }),
@@ -73,7 +73,7 @@ export const EXERCISES: Exercise[] = [
   plyo({ id: 'calf-hop', name: 'Calf hops', cues: ['Stay on the balls of your feet', 'Quick, springy contacts'] }),
 
   cool({ id: 'static-stretch', name: 'Static stretches', defaultTarget: { seconds: 75 }, cues: ['Easy, steady stretches', 'Breathe slowly'] }),
-  cool({ id: 'breathing', name: 'Breathing', defaultTarget: { seconds: 90 }, verify: 'none', cues: ['In through the nose', 'Long breath out'] }),
+  cool({ id: 'breathing', name: 'Breathing', defaultTarget: { seconds: 90 }, verify: 'presence', cues: ['In through the nose', 'Long breath out'] }),
 ];
 
 export const exerciseById = (id: string): Exercise | undefined => EXERCISES.find((e) => e.id === id);

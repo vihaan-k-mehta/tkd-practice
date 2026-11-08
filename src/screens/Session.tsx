@@ -126,7 +126,7 @@ export function SessionScreen({ id }: { id?: string }) {
     const watched = camActive && ex.verify !== 'none';
     if (st.type === 'reps') {
       return <RepsRun key={`${bi}-${si}`} label={ex.name} reps={st.reps} side={st.side} caption={st.caption} next={nextLabel(bi, si)}
-        verifier={watched && ex.verify === 'reps' ? ver : undefined} onFail={(sec) => failBlock(sec)}
+        verifier={watched ? ver : undefined} counts={ex.verify === 'reps' ? 'camera' : 'tap'} mode={ex.verify === 'motion' ? 'motion' : 'presence'} onFail={(sec) => failBlock(sec)}
         onDone={(c, sec, verified) => finishStep(sec, c, st.side, verified ? sec : undefined)} onSkip={skipBlock} />;
     }
     const prev = plan[bi][si - 1];

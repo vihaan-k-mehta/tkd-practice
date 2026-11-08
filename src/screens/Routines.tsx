@@ -19,7 +19,7 @@ export function ExerciseDetail({ ex, onClose }: { ex: Exercise; onClose: () => v
       <p class="sub note">
         {ex.verify === 'none' ? 'The camera does not check this exercise.' :
           ex.verify === 'presence' ? 'The camera checks you are in view.' :
-          ex.verify === 'motion' ? 'The camera checks you are moving.' : 'The camera counts your kicks.'}
+          ex.verify === 'motion' ? (ex.blockType === 'reps' ? 'The camera checks you are moving while you count. Reps only count while it sees you.' : 'The camera checks you are moving.') : 'The camera counts your kicks.'}
         {ex.needsPartner ? ' Needs a partner.' : ''}
       </p>
       <p class="sub note">A simplified drawing, not a replacement for your instructor. Record your own clip to add it here.</p>
