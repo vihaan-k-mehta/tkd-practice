@@ -126,7 +126,7 @@ export function cleanCamera(v: unknown, d: CameraSettings = DEFAULT_CAMERA): Cam
       const x = raw as Record<string, unknown>;
       const k = (x.kickCfg && typeof x.kickCfg === 'object' ? x.kickCfg : {}) as Record<string, unknown>;
       const kcx = { kickHeight: NUM(k.kickHeight, -1, 1), extendAngle: NUM(k.extendAngle, 100, 175), chamberAngle: NUM(k.chamberAngle, 40, 140), returnAngle: NUM(k.returnAngle, 60, 170) };
-      exercise[id] = { motionThreshold: NUM(x.motionThreshold, 0.02, 0.5), kickCfg: Object.values(kcx).some((q) => q !== undefined) ? kcx : undefined, samples: NUM(x.samples, 0, 100) ?? 0 };
+      exercise[id] = { motionThreshold: NUM(x.motionThreshold, 0.02, 0.5), kickCfg: Object.values(kcx).some((q) => q !== undefined) ? kcx : undefined, samples: NUM(x.samples, 0, 100) ?? 0, counted: NUM(x.counted, 0, 1000), expected: NUM(x.expected, 0, 1000) };
     }
   }
   return {

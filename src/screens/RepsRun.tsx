@@ -6,14 +6,14 @@ import { audio } from '../engine/audio';
 import { KICK_SEC } from '../engine/plan';
 
 /** Manual rep counter. Camera counting replaces the tap in the camera milestone. */
-export function RepsRun({ label, reps, side, caption, next, onDone, onSkip, verifier, onFail, counts = 'camera', mode = 'presence', cameraDown, kicksPer = 1, tempo, watchLeg, totals }: {
+export function RepsRun({ label, reps, side, caption, next, onDone, onSkip, verifier, onFail, counts = 'camera', mode = 'presence', cameraDown, kicksPer = 1, tempo, watchLeg, totals, exerciseId }: {
   label: string; reps: number; side?: string; caption?: string; next?: string; onDone: (count: number, elapsedSec: number, verified?: boolean) => void; onSkip: () => void;
   /** When set, the camera counts the kicks instead of your taps. */
   verifier?: Verifier; onFail?: (elapsedSec: number) => void;
   /** 'camera': the camera counts kicks. 'tap': you count, but taps only count while the camera sees you (and sees you move, when asked). */
   counts?: 'camera' | 'tap'; mode?: 'presence' | 'motion'; cameraDown?: boolean;
   /** Combos: how many kicks make one rep, the tempo to beep at, and the leg that must stay up. */
-  kicksPer?: number; tempo?: 'slow' | 'fast'; watchLeg?: 'left' | 'right'; totals?: { current: BwTotals };
+  kicksPer?: number; tempo?: 'slow' | 'fast'; watchLeg?: 'left' | 'right'; totals?: { current: BwTotals }; exerciseId?: string;
 }) {
   const [manual, setN] = useState(0);
   const t0 = useRef(performance.now()).current;
@@ -34,7 +34,7 @@ export function RepsRun({ label, reps, side, caption, next, onDone, onSkip, veri
   const done = useRef(false);
   useEffect(() => {
     if (!verifier) return;
-    verifier.beginBlock(mode);
+    verifier.beginBlock(mode, exerciseId);
     return () => { verifier.endBlock(); };
   }, []);
   useEffect(() => {

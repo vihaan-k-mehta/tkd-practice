@@ -30,9 +30,11 @@ export interface RunProps {
   cameraDown?: boolean;
   /** The foot must stay up on this leg. A fast beep means it touched down. */
   watchLeg?: 'left' | 'right'; hold?: boolean; totals?: { current: BwTotals };
+  /** Which exercise this is, so its own tuning is used. */
+  exerciseId?: string;
 }
 
-export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, timeline, phaseChange, next, skipLabel, onDone, onSkip, verifier, verifyMode, onFail, cameraDown, watchLeg, hold, totals }: RunProps) {
+export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, timeline, phaseChange, next, skipLabel, onDone, onSkip, verifier, verifyMode, onFail, cameraDown, watchLeg, hold, totals, exerciseId }: RunProps) {
   const clock = useRef(new BlockClock(segments.reduce((a, b) => a + b, 0))).current;
   const [segs, setSegs] = useState(segments);
   const [paused, setPaused] = useState(false);
@@ -74,7 +76,7 @@ export function BlockRun({ label, kind, segments, sideLabels, caption, cfg, time
   const held = (!!gate && !gate.running) || !!cameraDown;
   useEffect(() => {
     if (!verifier || !verifyMode) return;
-    verifier.beginBlock(verifyMode);
+    verifier.beginBlock(verifyMode, exerciseId);
     return () => { verifier.endBlock(); };
   }, []);
   useEffect(() => {

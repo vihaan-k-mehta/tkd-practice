@@ -7,6 +7,7 @@ import { handleEmailLanding } from '../data/auth';
 import { startSync } from '../data/sync';
 import { Train } from '../screens/Train';
 import { Stats } from '../screens/Stats';
+import { Tuning } from '../screens/Tuning';
 import { Quests } from '../screens/Quests';
 import { TabBar } from './TabBar';
 import { Today } from '../screens/Today';
@@ -54,7 +55,8 @@ export function App() {
       {name === 'animations' && <AnimSheet />}
       {name === 'debug-pose' && <DebugPose />}
       {name === 'train' && <Train />}
-      {name !== 'session' && name !== 'train' && <TabBar route={tab} />}
+      {name === 'tuning' && <Tuning key={id} id={id} />}
+      {name !== 'session' && name !== 'train' && name !== 'tuning' && <TabBar route={tab} />}
     </>
   );
 }

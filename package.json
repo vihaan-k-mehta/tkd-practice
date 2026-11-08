@@ -22,6 +22,7 @@
     "@fontsource-variable/archivo": "*",
     "@playwright/test": "*",
     "@preact/preset-vite": "*",
+    "tsx": "^4.23.15",
     "typescript": "*",
     "vite": "*",
     "vite-plugin-pwa": "*",

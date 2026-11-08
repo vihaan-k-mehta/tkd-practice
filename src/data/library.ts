@@ -33,7 +33,7 @@ export const notice = createStore<{ lines: string[] }>('tkd.notice.v1', { lines:
 
 export interface CameraSettings { use: boolean; honor: boolean; skeleton: boolean; kickHeight?: number; sensitivity: 'relaxed' | 'normal' | 'strict'; quality: 'full' | 'lite'; motionThreshold?: number; kickCfg?: { kickHeight?: number; extendAngle?: number; chamberAngle?: number; returnAngle?: number };
   /** Tuning for one exercise, learned from your own recordings. Overrides the general settings for that exercise. */
-  exercise: Record<string, { motionThreshold?: number; kickCfg?: { kickHeight?: number; extendAngle?: number; chamberAngle?: number; returnAngle?: number }; samples: number }> }
+  exercise: Record<string, { motionThreshold?: number; kickCfg?: { kickHeight?: number; extendAngle?: number; chamberAngle?: number; returnAngle?: number }; samples: number; counted?: number; expected?: number }> }
 export const camera = createStore<CameraSettings>('tkd.camera.v1', DEFAULT_CAMERA, (v, d) => cleanCamera(v, d));
 
 export const uid =() => Math.random().toString(36).slice(2, 10);

@@ -48,6 +48,8 @@ export function Settings() {
       </ul>
       <a class="btn-primary" href="#/train" style={{ textDecoration: 'none', marginTop: '10px' }}>Guided training (about 2 minutes)</a>
       <p class="sub note">Follow a voice through a few exercises. It tunes the camera to you and reports back.</p>
+      <a class="btn-ghost" href="#/tuning" style={{ textDecoration: 'none', display: 'block', textAlign: 'center', marginTop: '10px' }}>Training data: record 5 of each exercise</a>
+      <p class="sub note">Record every exercise once and the camera is tuned to how you do each one. Recordings are body points only and save to your account.</p>
       <p class="eyebrow">How strict is the camera</p>
       <div class="seg-row" role="radiogroup" aria-label="Camera sensitivity" style={{ marginTop: '0px' }}>
         {(['relaxed', 'normal', 'strict'] as const).map((s) => (

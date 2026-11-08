@@ -7,6 +7,7 @@ import { ExerciseAnim } from '../anim/ExerciseAnim';
 import { TimeSheet } from '../app/TimeSheet';
 import { CameraPreview } from './CameraPreview';
 import { CameraSetup } from './CameraSetup';
+import { TrackingHelp } from './TrackingHelp';
 import { useVerifier } from '../vision/useVerifier';
 import { newTotals } from '../vision/useLegWatch';
 import { useAlerts } from '../data/settings';
@@ -54,6 +55,7 @@ export function SessionScreen({ id }: { id?: string }) {
   const [tested, setTested] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [timeOpen, setTimeOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [wasHidden, setWasHidden] = useState(false);
   const [results, setResults] = useState<Result[]>([]);
   const saved = useRef(false);
@@ -133,7 +135,7 @@ export function SessionScreen({ id }: { id?: string }) {
     const cameraDown = watched && ver.status !== 'ready';
     if (st.type === 'reps') {
       return <RepsRun key={`${bi}-${si}`} label={ex.name} reps={st.reps} side={st.side} caption={st.caption} next={nextLabel(bi, si)}
-        verifier={watched ? ver : undefined} cameraDown={cameraDown} kicksPer={st.kicksPer} tempo={st.tempo} watchLeg={watched && st.watch ? st.leg : undefined} totals={totals} counts={ex.verify === 'reps' ? 'camera' : 'tap'} mode={ex.verify === 'motion' ? 'motion' : 'presence'} onFail={(sec) => failBlock(sec)}
+        verifier={watched ? ver : undefined} cameraDown={cameraDown} exerciseId={ex.id} kicksPer={st.kicksPer} tempo={st.tempo} watchLeg={watched && st.watch ? st.leg : undefined} totals={totals} counts={ex.verify === 'reps' ? 'camera' : 'tap'} mode={ex.verify === 'motion' ? 'motion' : 'presence'} onFail={(sec) => failBlock(sec)}
         onDone={(c, sec, verified) => finishStep(sec, c, st.side, verified ? sec : undefined)} onSkip={skipBlock} />;
     }
     const prev = plan[bi][si - 1];
@@ -141,7 +143,7 @@ export function SessionScreen({ id }: { id?: string }) {
       <BlockRun key={`${bi}-${si}`} kind={st.phase} label={ex.name} segments={st.segments} sideLabels={st.sideLabels} caption={st.caption} cfg={cfg}
         phaseChange={st.phase === 'work' && prev?.type === 'timed' && prev.phase === 'rest'} next={nextLabel(bi, si)}
         skipLabel={st.phase === 'rest' ? 'Skip rest' : 'Skip block'}
-        verifier={watched && st.phase === 'work' ? ver : undefined} cameraDown={cameraDown && st.phase === 'work'} watchLeg={watched && st.watch ? st.leg : undefined} hold={st.hold} totals={totals} verifyMode={ex.verify === 'motion' ? 'motion' : 'presence'} onFail={failBlock}
+        verifier={watched && st.phase === 'work' ? ver : undefined} cameraDown={cameraDown && st.phase === 'work'} watchLeg={watched && st.watch ? st.leg : undefined} hold={st.hold} totals={totals} exerciseId={ex.id} verifyMode={ex.verify === 'motion' ? 'motion' : 'presence'} onFail={failBlock}
         onDone={(sec, vsec) => finishStep(sec, undefined, undefined, vsec)} onSkip={st.phase === 'rest' ? () => finishStep(0) : skipBlock} />
     );
   };
@@ -225,6 +227,8 @@ export function SessionScreen({ id }: { id?: string }) {
       )}
 
       {step.s !== 'camera' && ver.status !== 'off' && <CameraPreview v={ver} />}
+      {camActive && step.s === 'run' && exerciseById(routine.blocks[step.bi].exerciseId)!.verify !== 'none' && <button class="discard" onClick={() => setHelpOpen(true)}>Tracking wrong?</button>}
+      {helpOpen && step.s === 'run' && <TrackingHelp v={ver} exerciseId={routine.blocks[step.bi].exerciseId} onClose={() => setHelpOpen(false)} />}
       {inRun && step.s === 'run' && <button class="discard hurt" onClick={() => hurt(step.bi)}>Something hurt</button>}
       {inRun && <button class="discard" onClick={() => setSheet(true)}>Quit session</button>}
 
