@@ -24,10 +24,12 @@ const kicks = (reps: number, pattern: 'round' | 'low-high' | 'hook-round' | 'low
   { kind: 'kicks', reps, tempo: 'slow', pattern, label: `${label}, slow` },
   { kind: 'kicks', reps, tempo: 'fast', pattern, label: `${label}, fast` },
 ];
-/** The Bill Wallace routine for one leg. The foot stays up except in the two `down` phases. */
+/** The Bill Wallace routine for one leg. The foot stays up except in the `down` phases (between holds, and twice later). */
 const BILL_WALLACE: SeqPhase[] = [
   { kind: 'hold', seconds: 10, label: 'Hold the leg out straight, as high as you can. 1 of 3' },
+  { kind: 'down', seconds: 10, label: 'Foot down. Shake it out.' },
   { kind: 'hold', seconds: 10, label: 'Hold it out and high. 2 of 3' },
+  { kind: 'down', seconds: 10, label: 'Foot down. Shake it out.' },
   { kind: 'hold', seconds: 10, label: 'Hold it out and high. 3 of 3' },
   { kind: 'down', seconds: 15, label: 'Foot down. Breathe.' },
   ...kicks(5, 'round', 'Roundhouse'),

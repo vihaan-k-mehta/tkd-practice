@@ -15,11 +15,11 @@ const leftOnly = () => expandBlock(blockFor('bill-wallace-routine', {}), ex).fil
 const oneLeg = () => expandBlock({ ...blockFor('bill-wallace-routine'), sides: 'left' }, ex);
 
 describe('the Bill Wallace routine, exactly as described', () => {
-  it('is one continuous sequence per leg: three 10 second holds, foot down, then the kick blocks, foot down, then the combo', () => {
+  it('is one sequence per leg: three 10 second holds with the foot down between them, then the kick blocks, foot down, then the combo', () => {
     const s = oneLeg();
     const kinds = s.map((x) => (x.type === 'timed' ? (x.phase === 'rest' ? 'DOWN' : `hold${x.segments[0]}`) : `${x.pattern}-${x.tempo}-${x.reps}`));
     expect(kinds).toEqual([
-      'hold10', 'hold10', 'hold10', 'DOWN',
+      'hold10', 'DOWN', 'hold10', 'DOWN', 'hold10', 'DOWN',
       'round-slow-5', 'round-fast-5',
       'low-high-slow-5', 'low-high-fast-5',
       'hook-round-slow-5', 'hook-round-fast-5', 'DOWN',
@@ -29,7 +29,7 @@ describe('the Bill Wallace routine, exactly as described', () => {
   it('only lets the foot touch down at the designated points', () => {
     const s = oneLeg();
     const unwatched = s.filter((x) => !x.watch).map((x) => (x.type === 'timed' ? x.phase : 'reps'));
-    expect(unwatched).toEqual(['rest', 'rest']);
+    expect(unwatched).toEqual(['rest', 'rest', 'rest', 'rest']);
     expect(s.filter((x) => x.watch).every((x) => x.leg === 'left')).toBe(true);
   });
   it('does both legs with a foot-down switch in between', () => {
